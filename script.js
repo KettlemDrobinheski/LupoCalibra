@@ -100,17 +100,25 @@ function triggerInterlock(reason) {
 }
 
 function resetSystem() {
+    console.log("Comando de Reset executado pelo operador.");
+    
+    clearInterval(downtimeInterval);
+    downtimeSeconds = 0;
+
+    systemInterlockActive = false;
+    machineJamActive = false;
+    
     Object.keys(sortingBins).forEach(binKey => {
         sortingBins[binKey].errorTimestamps = [];
         sortingBins[binKey].lastWeight = 0;
         sortingBins[binKey].status = "Operacional";
-    })
+    });
 
-    systemInterlockActive = false;
     systemStatusLabel.textContent = "System OK";
     systemStatusLabel.className = "system-status status-running";
     
     buildDashboard();
+    console.log("Linha reiniciada com sucesso!");
 }
 
 window.onload = function() {
