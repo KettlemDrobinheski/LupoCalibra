@@ -123,7 +123,7 @@ function resetSystem() {
 
 window.onload = function() {
     buildDashboard();
-    simulationInterval = setInterval(simulateBelt, 1200); // Roda a esteira um pouco mais rápido (1.2s)
+    simulationInterval = setInterval(simulateBelt, 342);
 }
 
 function triggerMachineJam() {
