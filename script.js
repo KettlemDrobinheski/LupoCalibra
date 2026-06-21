@@ -1,3 +1,4 @@
+// 1. Configuração oficial das BLs da Linha de Coxas
 const sortingBins = {
     "BL_06": { minWeight: 160, maxWeight: 180, errorTimestamps: [], totalProcessed: 0, lastWeight: 0, status: "Operacional" },
     "BL_07": { minWeight: 181, maxWeight: 200, errorTimestamps: [], totalProcessed: 0, lastWeight: 0, status: "Operacional" },
@@ -6,19 +7,20 @@ const sortingBins = {
     "BL_10": { minWeight: 241, maxWeight: 260, errorTimestamps: [], totalProcessed: 0, lastWeight: 0, status: "Operacional" },
     "BL_11": { minWeight: 261, maxWeight: 280, errorTimestamps: [], totalProcessed: 0, lastWeight: 0, status: "Operacional" },
     "BL_12": { minWeight: 281, maxWeight: 300, errorTimestamps: [], totalProcessed: 0, lastWeight: 0, status: "Operacional" },
-    "BL_200UP": { minWeight: 301, maxWeight: 999, errorTimestamps: [], totalProcessed: 0, lastWeight: 0, status: "Operacional" } // Corrigido minWeight para 301 para não chocar com a BL_06
+    "BL_200UP": { minWeight: 301, maxWeight: 999, errorTimestamps: [], totalProcessed: 0, lastWeight: 0, status: "Operacional" }
 };
 
 const MAX_ALLOWED_ERRORS = 5; 
 let systemInterlockActive = false;
-let machineJamActive = false;     // Declarado corretamente
-let downtimeSeconds = 0;          // Declarado corretamente
+let machineJamActive = false;     // Variável garantida aqui no topo!
+let downtimeSeconds = 0;          
 let simulationInterval = null;
-let downtimeInterval = null;      // Declarado corretamente
+let downtimeInterval = null;      
 
 const binsGrid = document.getElementById('binsGrid');
 const systemStatusLabel = document.getElementById('systemStatusLabel');
 
+// 2. Cria a estrutura visual inicial (Limpa, sem travar o carregamento)
 function buildDashboard() {
     binsGrid.innerHTML = '';
 
@@ -46,6 +48,8 @@ function buildDashboard() {
     });
 }
 
+// 3. Atualiza somente os números na tela rapidamente
+function updateLiveValues() {
     Object.keys(sortingBins).forEach(binKey => {
         const bin = sortingBins[binKey];
         const card = document.getElementById(`card-${binKey}`);
@@ -63,11 +67,13 @@ function buildDashboard() {
             document.getElementById(`status-${binKey}`).textContent = bin.status;
         }
     });
+}
 
+// 4. Fluxo ultrarrápido da esteira (342ms)
 function simulateBelt() {
-
     if (systemInterlockActive || machineJamActive) return;
 
+    // 0.5% de chance de obstrução devido à alta velocidade
     if (Math.random() < 0.005) { 
         triggerMachineJam();
         return;
@@ -85,11 +91,11 @@ function simulateBelt() {
 
     if (targetBinKey) {
         const bin = sortingBins[targetBinKey];
-        const mechanicalFailure = Math.random() < 0.02; // 2% de chance de erro no pistão pneumático
+        const mechanicalFailure = Math.random() < 0.02; // 2% de chance de erro no pistão
 
         if (mechanicalFailure) {
             bin.errorTimestamps.push(new Date().toLocaleTimeString());
-            console.error(`FALHA MECÂNICA: Pistão da ${targetBinKey} falhou! Peso: ${simulatedWeight}g`);
+            console.error(`FALHA MECÂNICA: Pistão da ${targetBinKey} falhou!`);
 
             if (bin.errorTimestamps.length >= MAX_ALLOWED_ERRORS) {
                 bin.status = "BLOQUEADO";
@@ -104,6 +110,7 @@ function simulateBelt() {
     updateLiveValues();
 }
 
+// 5. Aciona o bloqueio por falhas mecânicas repetidas
 function triggerInterlock(reason) {
     systemInterlockActive = true;
     systemStatusLabel.textContent = "EMERGÊNCIA - LINHA BLOQUEADA";
@@ -111,6 +118,7 @@ function triggerInterlock(reason) {
     alert(reason);
 }
 
+// 6. Aciona o alarme de produto preso (Jam)
 function triggerMachineJam() {
     machineJamActive = true;
     systemStatusLabel.textContent = "ALERTA: ESTEIRA TRAVADA / JAM DETECTED";
@@ -124,8 +132,9 @@ function triggerMachineJam() {
     }, 1000);
 }
 
+// 7. Botão Clicável de Reset
 function resetSystem() {
-    console.log("Comando de Reset executado pelo operador.");
+    console.log("Comando de Reset executado.");
 
     clearInterval(downtimeInterval);
     downtimeSeconds = 0;
@@ -143,9 +152,9 @@ function resetSystem() {
     systemStatusLabel.className = "system-status status-running";
 
     updateLiveValues();
-    console.log("Linha reiniciada com sucesso!");
 }
 
+// 8. Inicializador da Linha
 window.onload = function() {
     buildDashboard();
     simulationInterval = setInterval(simulateBelt, 342); 
