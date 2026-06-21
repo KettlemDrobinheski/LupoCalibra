@@ -11,12 +11,21 @@ const sortingBins = {
 
 const MAX_ALLOWED_ERRORS = 5; 
 let systemInterlockActive = false;
+let downtimeSeconds = 0;
 let simulationInterval = null;
 
 const binsGrid = document.getElementById('binsGrid');
 const systemStatusLabel = document.getElementById('systemStatusLabel');
 
 function buildDashboard() {
+    
+    if (systemInterlockActive || machineJamActive) return; // Impede a esteira de rodar se estiver travada
+
+    if (Math.random() < 0.03) { 
+        triggerMachineJam();
+        return;
+    }
+
     binsGrid.innerHTML = '';
     
     Object.keys(sortingBins).forEach(binKey => {
@@ -95,7 +104,7 @@ function resetSystem() {
         sortingBins[binKey].errorTimestamps = [];
         sortingBins[binKey].lastWeight = 0;
         sortingBins[binKey].status = "Operacional";
-    });
+    })
 
     systemInterlockActive = false;
     systemStatusLabel.textContent = "System OK";
@@ -107,4 +116,16 @@ function resetSystem() {
 window.onload = function() {
     buildDashboard();
     simulationInterval = setInterval(simulateBelt, 1200); // Roda a esteira um pouco mais rápido (1.2s)
+}
+
+function triggerMachineJam() {
+    machineJamActive = true;
+    systemStatusLabel.textContent = "ALERTA: ESTEIRA TRAVADA / JAM DETECTED";
+    systemStatusLabel.className = "system-status status-jammed"; 
+    
+    downtimeSeconds = 0;
+    downtimeInterval = setInterval(() => {
+        downtimeSeconds++;
+        systemStatusLabel.textContent = `ESTEIRA TRAVADA - TEMPO PARADO: ${downtimeSeconds}s`;
+    }, 1000);
 };
