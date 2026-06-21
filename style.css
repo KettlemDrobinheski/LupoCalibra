@@ -1,178 +1,123 @@
- :root {
-            --bg-dark: #121824;
-            --card-bg: #1e293b;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --status-ok: #10b981;
-            --status-warn: #f59e0b;
-            --status-alarm: #ef4444;
-        }
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #121214;
+    color: #e1e1e6;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
+header {
+    background-color: #202024;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 4px solid #00b37e;
+}
 
-        body {
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            padding: 20px;
-        }
+h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #ffffff;
+}
 
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 2px solid #334155;
-            padding-bottom: 15px;
-            margin-bottom: 25px;
-        }
+.subtitle {
+    margin: 5px 0 0 0;
+    font-size: 0.9rem;
+    color: #8d8d99;
+}
 
-        header h1 {
-            font-size: 24px;
-            letter-spacing: 0.5px;
-        }
+.system-status {
+    padding: 10px 20px;
+    border-radius: 4px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
 
-        .system-status {
-            font-weight: bold;
-            padding: 8px 16px;
-            border-radius: 4px;
-            text-transform: uppercase;
-        }
+.status-running { background-color: #00875f; color: #fff; }
+.status-stopped { background-color: #f75a68; color: #fff; animation: piscar 1s infinite; }
+.status-jammed { background-color: #e17055; color: #fff; animation: piscar 0.6s infinite; }
 
-        .status-running {
-            background-color: rgba(16, 185, 129, 0.2);
-            color: var(--status-ok);
-            border: 1px solid var(--status-ok);
-        }
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+    padding: 20px;
+    flex: 1;
+}
 
-        .status-interlock {
-            background-color: rgba(239, 68, 68, 0.2);
-            color: var(--status-alarm);
-            border: 1px solid var(--status-alarm);
-            animation: pulse-border 1s infinite alternate;
-        }
+.bin-card {
+    background-color: #202024;
+    border: 2px solid #29292e;
+    border-radius: 6px;
+    overflow: hidden;
+    transition: all 0.2s ease;
+}
 
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 20px;
-            margin-bottom: 25px;
-        }
+.bin-header {
+    background-color: #29292e;
+    padding: 12px;
+    text-align: center;
+    border-bottom: 2px solid #323238;
+}
 
-        .bin-card {
-            background-color: var(--card-bg);
-            border: 2px solid #334155;
-            border-radius: 8px;
-            padding: 20px;
-            transition: all 0.3s ease;
-            position: relative;
-        }
+.bin-name {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #00b37e;
+}
 
-        .bin-card.warning {
-            border-color: var(--status-warn);
-        }
+.bin-body {
+    padding: 15px;
+    font-size: 0.95rem;
+}
 
-        .bin-card.interlock-active {
-            border-color: var(--status-alarm);
-            background-color: #3b1111;
-            animation: flash-red 0.5s infinite alternate;
-        }
+.bin-body p {
+    margin: 8px 0;
+    display: flex;
+    justify-content: space-between;
+}
 
-        .bin-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
+.weight-value {
+    color: #00b37e;
+    font-weight: bold;
+}
 
-        .bin-name {
-            font-size: 20px;
-            font-weight: bold;
-        }
+.bin-error {
+    border-color: #f75a68;
+    background-color: #2d1e22;
+}
+.bin-error .bin-name {
+    color: #f75a68;
+}
 
-        .bin-spec {
-            font-size: 14px;
-            color: var(--text-muted);
-            background: #0f172a;
-            padding: 2px 8px;
-            border-radius: 4px;
-        }
+footer {
+    background-color: #202024;
+    padding: 20px;
+    text-align: center;
+}
 
-        .data-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-            font-size: 15px;
-        }
+.btn-reset {
+    background-color: #00b37e;
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    font-size: 1rem;
+    font-weight: bold;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
 
-        .data-label {
-            color: var(--text-muted);
-        }
+.btn-reset:hover {
+    background-color: #00875f;
+}
 
-        .data-value {
-            font-weight: 600;
-        }
-
-        .fault-bar-container {
-            background-color: #0f172a;
-            height: 8px;
-            border-radius: 4px;
-            margin-top: 15px;
-            overflow: hidden;
-        }
-
-        .fault-bar {
-            height: 100%;
-            width: 0%;
-            background-color: var(--status-ok);
-            transition: width 0.3s ease, background-color 0.3s ease;
-        }
-
-        footer {
-            display: flex;
-            justify-content: flex-end;
-            gap: 15px;
-        }
-
-        button {
-            background-color: #3b82f6;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            font-size: 16px;
-            font-weight: bold;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        button:hover {
-            background-color: #2563eb;
-        }
-
-        button.btn-reset {
-            background-color: var(--status-alarm);
-            display: none;
-        }
-
-        button.btn-reset.show {
-            display: block;
-            animation: pulse-btn 1s infinite alternate;
-        }
-
-        /* Animations */
-        @keyframes flash-red {
-            from { background-color: #1e293b; border-color: #334155; }
-            to { background-color: #4c0519; border-color: var(--status-alarm); }
-        }
-        @keyframes pulse-border {
-            from { box-shadow: 0 0 0px var(--status-alarm); }
-            to { box-shadow: 0 0 10px var(--status-alarm); }
-        }
-        @keyframes pulse-btn {
-            from { transform: scale(1); }
-            to { transform: scale(1.05); }
-        }
+@keyframes piscar {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
