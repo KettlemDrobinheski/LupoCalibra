@@ -1,11 +1,27 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LopuCalibra</title>
+    <title>Painel de Controle</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    
+
+    <header>
+        <div>
+            <h1>LINHA DE EMBALAGEM (BL EXPORT
+            <p class="subtitle">Sistema de Integridade do Desviador de Alta Velocidade
+        </div>
+        <div id="systemStatusLabel" class="system-status status-running">System OK</div>
+    </header>
+
+    <main class="grid-container" id="binsGrid"></main>
+
+    <footer>
+        <button id="resetBtn" class="btn-reset" onclick="resetSystem()">RESET INTERLOCK & RESTART LINE</button>
+    </footer>
+
+    <script src="app.js"></script>
 </body>
 </html>
