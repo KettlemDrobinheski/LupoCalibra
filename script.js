@@ -7,6 +7,7 @@ const firebaseConfig = {
     appId: "1:862852072128:web:568e64c18ac919fdf22325",
     measurementId: "G-ZY4LWQ5TH1"
 };
+
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
@@ -29,6 +30,7 @@ const sortingBins = {
     "BL_12_R": { side: "Direito", minWeight: 281, maxWeight: 300, errorTimestamps: [], totalProcessed: 0, lastWeight: 0, status: "Operacional" },
     "BL_200UP_R": { side: "Direito", minWeight: 301, maxWeight: 999, errorTimestamps: [], totalProcessed: 0, lastWeight: 0, status: "Operacional" }
 };
+
 const MAX_ALLOWED_ERRORS = 5; 
 let systemInterlockActive = false;
 let machineJamActive = false;     
@@ -39,22 +41,49 @@ let downtimeInterval = null;
 const binsGrid = document.getElementById('binsGrid');
 const systemStatusLabel = document.getElementById('systemStatusLabel');
 
+function salvarProducaoNoFirestore() {
+    db.collection("producao_diaria").doc("linha_export").set({
+        ultimo_registro: firebase.firestore.FieldValue.serverTimestamp(),
+        systemInterlockActive: systemInterlockActive,
+        machineJamActive: machineJamActive,
+        statusGeral: systemInterlockActive ? "BLOQUEADO" : (machineJamActive ? "JAMMED" : "OPERACIONAL")
+    })
+    .then(() => console.log("Status atualizado no Firestore."))
+    .catch((error) => console.error("Erro no Firestore: ", error));
+}
+
+function registrarFalhaNoFirestore(tipoFalha, motivo) {
+    db.collection("historico_paradas").add({
+        horario: firebase.firestore.FieldValue.serverTimestamp(),
+        tipo: tipoFalha, 
+        motivo: motivo,
+        duracao_segundos: downtimeSeconds
+    })
+    .then((docRef) => console.log("Falha salva na nuvem com ID: ", docRef.id))
+    .catch((error) => console.error("Erro ao salvar histórico: ", error));
+}
+
 function buildDashboard() {
+    if (!binsGrid) return;
     binsGrid.innerHTML = '';
 
     const leftSection = document.createElement('div');
-    leftSection.innerHTML = '<h2 style="color: #00b37e; width: 100%; grid-column: 1/-1; text-align: center; border-bottom: 2px solid #29292e; padding-bottom: 10px;">LADO ESQUERDO (Calha A)</h2>';
+    leftSection.innerHTML = '<h2 style="color: #00b37e; width: 100%; grid-column: 1/-1; text-align: center; border-bottom: 2px solid #29292e; padding-bottom: 10px; margin-top:10px;">LADO ESQUERDO (Calha A)</h2>';
     leftSection.style.display = 'contents';
 
     const rightSection = document.createElement('div');
-    rightSection.innerHTML = '<h2 style="color: #4ea8de; width: 100%; grid-column: 1/-1; text-align: center; border-bottom: 2px solid #29292e; padding-bottom: 10px; margin-top: 20px;">LADO DIREITO (Calha B)</h2>';
+    rightSection.innerHTML = '<h2 style="color: #4ea8de; width: 100%; grid-column: 1/-1; text-align: center; border-bottom: 2px solid #29292e; padding-bottom: 10px; margin-top: 30px;">LADO DIREITO (Calha B)</h2>';
     rightSection.style.display = 'contents';
 
     binsGrid.appendChild(leftSection);
-    binsGrid.appendChild(rightSection);
 
     Object.keys(sortingBins).forEach(binKey => {
         const bin = sortingBins[binKey];
+        
+        if(binKey === "BL_06_R") {
+            binsGrid.appendChild(rightSection);
+        }
+
         const card = document.createElement('div');
         card.id = `card-${binKey}`;
         card.className = 'bin-card';
@@ -75,11 +104,26 @@ function buildDashboard() {
                 <p><strong>Status:</strong> <span id="status-${binKey}" class="status-text">${bin.status}</span></p>
             </div>
         `;
+        binsGrid.appendChild(card);
+    });
+}
 
-        if (bin.side === "Esquerdo") {
-            binsGrid.appendChild(card);
-        } else {
-            binsGrid.appendChild(card);
+function updateLiveValues() {
+    Object.keys(sortingBins).forEach(binKey => {
+        const bin = sortingBins[binKey];
+        const card = document.getElementById(`card-${binKey}`);
+        
+        if (card) {
+            if (bin.status === "BLOQUEADO") {
+                card.className = 'bin-card bin-error';
+            } else {
+                card.className = 'bin-card';
+            }
+            
+            document.getElementById(`weight-${binKey}`).textContent = bin.lastWeight > 0 ? bin.lastWeight + 'g' : '---';
+            document.getElementById(`count-${binKey}`).textContent = bin.totalProcessed;
+            document.getElementById(`errors-${binKey}`).textContent = `${bin.errorTimestamps.length} / ${MAX_ALLOWED_ERRORS}`;
+            document.getElementById(`status-${binKey}`).textContent = bin.status;
         }
     });
 }
@@ -93,13 +137,11 @@ function simulateBelt() {
     }
 
     const simulatedWeight = Math.floor(Math.random() * (400 - 150 + 1)) + 150;
-    
     const sideChosen = Math.random() < 0.5 ? "_L" : "_R";
     let targetBinKey = null;
 
     Object.keys(sortingBins).forEach(binKey => {
         const bin = sortingBins[binKey];
-        
         if (simulatedWeight >= bin.minWeight && simulatedWeight <= bin.maxWeight && binKey.endsWith(sideChosen)) {
             targetBinKey = binKey;
         }
@@ -115,7 +157,7 @@ function simulateBelt() {
 
             if (bin.errorTimestamps.length >= MAX_ALLOWED_ERRORS) {
                 bin.status = "BLOQUEADO";
-                triggerInterlock(`CRÍTICO: Linha parada! Falha de atuador no LADO ${bin.side.toUpperCase()} (${targetBinKey.replace('_L','').replace('_R','')})`);
+                triggerInterlock(`CRÍTICO: Linha parada! Falha no atuador do LADO ${bin.side.toUpperCase()} (${targetBinKey.replace('_L','').replace('_R','')})`);
             }
         } else {
             bin.totalProcessed++;
@@ -128,22 +170,32 @@ function simulateBelt() {
 
 function triggerInterlock(reason) {
     systemInterlockActive = true;
-    systemStatusLabel.textContent = "EMERGÊNCIA - LINHA BLOQUEADA";
-    systemStatusLabel.className = "system-status status-stopped";
+    if (systemStatusLabel) {
+        systemStatusLabel.textContent = "EMERGÊNCIA - LINHA BLOQUEADA";
+        systemStatusLabel.className = "system-status status-stopped";
+    }
+    salvarProducaoNoFirestore();
+    registrarFalhaNoFirestore("INTERLOCK", reason);
     alert(reason);
 }
 
 function triggerMachineJam() {
     machineJamActive = true;
-    systemStatusLabel.textContent = "ALERTA: ESTEIRA TRAVADA / JAM DETECTED";
-    systemStatusLabel.className = "system-status status-jammed"; 
+    if (systemStatusLabel) {
+        systemStatusLabel.className = "system-status status-jammed"; 
+    }
 
     downtimeSeconds = 0;
     clearInterval(downtimeInterval); 
     downtimeInterval = setInterval(() => {
         downtimeSeconds++;
-        systemStatusLabel.textContent = `ESTEIRA TRAVADA - TEMPO PARADO: ${downtimeSeconds}s`;
+        if (systemStatusLabel) {
+            systemStatusLabel.textContent = `ESTEIRA TRAVADA - TEMPO PARADO: ${downtimeSeconds}s`;
+        }
     }, 1000);
+
+    salvarProducaoNoFirestore();
+    registrarFalhaNoFirestore("JAM", "Acúmulo de produto na calha principal detectado pelo sensor óptico.");
 }
 
 function resetSystem() {
@@ -161,9 +213,12 @@ function resetSystem() {
         sortingBins[binKey].status = "Operacional";
     });
 
-    systemStatusLabel.textContent = "System OK";
-    systemStatusLabel.className = "system-status status-running";
+    if (systemStatusLabel) {
+        systemStatusLabel.textContent = "System OK";
+        systemStatusLabel.className = "system-status status-running";
+    }
 
+    salvarProducaoNoFirestore();
     updateLiveValues();
 }
 
