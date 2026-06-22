@@ -121,3 +121,49 @@ footer {
     50% { opacity: 0.5; }
     100% { opacity: 1; }
 }
+
+.ihm-container {
+    background-color: #222222;
+    color: #ffffff;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border: 1px solid #333;
+}
+
+.ihm-container h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 1.1rem;
+}
+
+.ihm-controles {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.ihm-input {
+    width: 80px;
+    padding: 6px;
+    text-align: center;
+    border-radius: 4px;
+    border: 1px solid #444;
+    background-color: #333;
+    color: #fff;
+}
+
+.ihm-botao {
+    padding: 6px 15px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+.ihm-botao:hover {
+    background-color: #218838;
+}
