@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Regulagem da Cuba - IHM</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="setup-body">
+
+    <div class="setup-card">
+        <h2>⚙️ Tela de Setup Industrial</h2>
+        <p class="setup-subtitulo">Configurando os parâmetros da: <strong id="tituloCuba">...</strong></p>
+        <hr class="setup-divisor">
+
+        <div class="setup-campo">
+            <label for="pesoAlvoCuba">Peso Alvo da Peça (g):</label>
+            <input type="number" id="pesoAlvoCuba" class="ihm-input" value="150">
+        </div>
+
+        <div class="setup-campo">
+            <label for="toleranciaCuba">Tolerância Aceitável (%):</label>
+            <input type="number" id="toleranciaCuba" class="ihm-input" value="10">
+        </div>
+
+        <button id="btnSalvarConfigCuba" class="ihm-botao btn-bloco">
+            ⚡ Aplicar e Salvar na Nuvem
+        </button>
+
+        <button onclick="window.location.href='index.html'" class="btn-voltar btn-bloco">
+            ⬅️ Voltar para o Painel Principal
+        </button>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="regulagem.js"></script>
+</body>
+</html>

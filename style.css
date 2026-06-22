@@ -167,3 +167,121 @@ footer {
 .ihm-botao:hover {
     background-color: #218838;
 }
+
+.modal-oculto {
+    display: none; 
+    position: fixed;
+    z-index: 1000; 
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-conteudo {
+    background-color: #222;
+    color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    width: 300px;
+    border: 1px solid #444;
+    position: relative;
+    box-shadow: 0px 4px 15px rgba(0,0,0,0.5);
+}
+
+.fechar-modal {
+    position: absolute;
+    right: 15px;
+    top: 10px;
+    font-size: 24px;
+    cursor: pointer;
+    color: #aaa;
+}
+.fechar-modal:hover { 
+    color: #fff; 
+}
+
+.modal-campo {
+    margin-top: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.btn-regular-cuba {
+    background: none;
+    border: none;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: transform 0.2s;
+    padding: 0 5px;
+}
+
+.btn-regular-cuba:hover {
+    transform: rotate(45deg);
+}
+.setup-body {
+    background-color: #111111;
+    color: #ffffff;
+    font-family: sans-serif;
+    padding: 40px;
+}
+
+.setup-card {
+    max-width: 500px;
+    margin: 0 auto;
+    background-color: #222222;
+    padding: 30px;
+    border-radius: 8px;
+    border: 1px solid #333333;
+}
+
+.setup-subtitulo {
+    color: #aaaaaa;
+}
+
+#tituloCuba {
+    color: #28a745;
+}
+
+.setup-divisor {
+    border-color: #333333;
+    margin: 20px 0;
+}
+
+.setup-campo {
+    margin-bottom: 20px;
+}
+
+.setup-campo label {
+    display: block;
+    margin-bottom: 8px;
+}
+
+.setup-campo .ihm-input {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.btn-bloco {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+.btn-voltar {
+    background-color: #555555;
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-voltar:hover {
+    background-color: #444444;
+}

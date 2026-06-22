@@ -226,3 +226,9 @@ window.onload = function() {
     buildDashboard();
     simulationInterval = setInterval(simulateBelt, 342); 
 };
+
+function abrirRegulagemCuba(idCuba) {
+    localStorage.setItem('cubaSelecionada', idCuba);
+    
+    window.location.href = 'regulagem.html';
+}
