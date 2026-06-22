@@ -1,3 +1,15 @@
+const firebaseConfig = {
+    apiKey: "AIzaSyCZbbRds530UMEhWLq39O6vGbiNnNCoHVI",
+    authDomain: "lupocalibra.firebaseapp.com",
+    projectId: "lupocalibra",
+    storageBucket: "lupocalibra.firebasestorage.app",
+    messagingSenderId: "862852072128",
+    appId: "1:862852072128:web:568e64c18ac919fdf22325",
+    measurementId: "G-ZY4LWQ5TH1"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
 const sortingBins = {
     "BL_06_L": { side: "Esquerdo", minWeight: 160, maxWeight: 180, errorTimestamps: [], totalProcessed: 0, lastWeight: 0, status: "Operacional" },
     "BL_07_L": { side: "Esquerdo", minWeight: 181, maxWeight: 200, errorTimestamps: [], totalProcessed: 0, lastWeight: 0, status: "Operacional" },
