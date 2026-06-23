@@ -1,66 +1,24 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel de Controle</title>
-    <link rel="stylesheet" href="style.css">
+    <title>LINHA DE EMBALAGEM BL EXPORT</title>
 </head>
 <body>
-
-    <header>
-        <div id="painel-configuracao" class="ihm-container">
-    <h3>⚙️ Painel de Regulagem (IHM)</h3>
-    <div class="ihm-controles">
-        <label for="pesoAlvoInput">Definir Peso Alvo (g): </label>
-        <input type="number" id="pesoAlvoInput" value="150" class="ihm-input">
-        <button id="btnSalvarConfig" class="ihm-botao">
-            Aplicar Regulagem
-        </button>
-    </div>
-
-        <div>
-            <h1>LINHA DE EMBALAGEM BL EXPORT</h1>
-            <p class="subtitle">Sistema de Integridade do Desviador de Alta Velocidade</p>
-        </div>
-        <div id="systemStatusLabel" class="system-status status-running">System OK</div>
-    </header>
-
-    <main class="grid-container" id="binsGrid"></main>
-
-    <footer>
-        <button id="resetBtn" class="btn-reset" onclick="resetSystem()">RESET INTERLOCK & RESTART LINE</button>
-    </footer>
-
-    <div id="modalRegulagem" class="modal-regulagem">
-    <div class="modal-conteudo">
-        <h2>⚙️ Tela de Setup Industrial</h2>
-        <p class="setup-subtitulo">Configurando os parâmetros da: <strong id="tituloCuba">...</strong></p>
-        <hr class="setup-divisor">
-
-        <div class="setup-campo">
-            <label for="pesoAlvoCuba">Peso Alvo da Peça (g):</label>
-            <input type="number" id="pesoAlvoCuba" class="ihm-input" value="150">
-        </div>
-
-        <div class="setup-campo">
-            <label for="toleranciaCuba">Tolerância Aceitável (%):</label>
-            <input type="number" id="toleranciaCuba" class="ihm-input" value="10">
-        </div>
-
-        <button id="btnSalvarConfigCuba" class="ihm-botao btn-bloco">
-            ⚡ Aplicar e Salvar na Nuvem
-        </button>
-
-        <button id="btnFecharModal" class="btn-voltar btn-bloco">
-            ❌ Cancelar e Voltar
-        </button>
-    </div>
-    </div>
-
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-
-    <script src="script.js"></script>
+    
 </body>
 </html>
+<div class="ihm-container">
+    <div class="ihm-header-alinhado">
+        <div>
+            <h3 style="margin: 0; font-size: 1.1rem; color: #ffffff;">LINHA DE EMBALAGEM BL EXPORT</h3>
+            <p class="subtitle">Sistema de Integridade do Desviador de Alta Velocidade</p>
+        </div>
+        <button class="btn-setup-geral" onclick="abrirJanelaRegulagem()">⚙️</button>
+    </div>
+    
+    <div id="alertaTrava" class="status-stopped" style="padding: 10px; margin-top: 15px; border-radius: 4px; text-align: center; font-weight: bold;">
+        ESTEIRA TRAVADA - TEMPO PARADO: 30S
+    </div>
+</div>
