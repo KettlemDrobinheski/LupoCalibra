@@ -32,26 +32,30 @@
         <button id="resetBtn" class="btn-reset" onclick="resetSystem()">RESET INTERLOCK & RESTART LINE</button>
     </footer>
 
-    <div id="modalRegulagem" class="modal-oculto">
-        <div class="modal-conteudo">
-            <span class="fechar-modal" onclick="fecharRegulagemCuba()">&times;</span>
-            <h3>⚙️ Ajuste Fino - <span id="nomeCubaSelecionada">Cuba XX</span></h3>
-            <hr>
-            
-            <div class="modal-campo">
-                <label for="pesoAlvoCuba">Peso Alvo da Cuba (g):</label>
-                <input type="number" id="pesoAlvoCuba" class="ihm-input" value="150">
-            </div>
-            
-            <div class="modal-campo">
-                <label for="toleranciaCuba">Tolerância Aceitável (%):</label>
-                <input type="number" id="toleranciaCuba" class="ihm-input" value="10">
-            </div>
+    <div id="modalRegulagem" class="modal-regulagem">
+    <div class="modal-conteudo">
+        <h2>⚙️ Tela de Setup Industrial</h2>
+        <p class="setup-subtitulo">Configurando os parâmetros da: <strong id="tituloCuba">...</strong></p>
+        <hr class="setup-divisor">
 
-            <button id="btnSalvarCuba" class="ihm-botao" style="margin-top: 15px; width: 100%;">
-                Salvar Ajuste na Nuvem
-            </button>
+        <div class="setup-campo">
+            <label for="pesoAlvoCuba">Peso Alvo da Peça (g):</label>
+            <input type="number" id="pesoAlvoCuba" class="ihm-input" value="150">
         </div>
+
+        <div class="setup-campo">
+            <label for="toleranciaCuba">Tolerância Aceitável (%):</label>
+            <input type="number" id="toleranciaCuba" class="ihm-input" value="10">
+        </div>
+
+        <button id="btnSalvarConfigCuba" class="ihm-botao btn-bloco">
+            ⚡ Aplicar e Salvar na Nuvem
+        </button>
+
+        <button id="btnFecharModal" class="btn-voltar btn-bloco">
+            ❌ Cancelar e Voltar
+        </button>
+    </div>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>

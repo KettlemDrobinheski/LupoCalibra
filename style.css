@@ -1,3 +1,6 @@
+/* ==========================================
+   ESTILOS GERAIS DA INTERFACE (IHM)
+   ========================================== */
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: #121214;
@@ -30,6 +33,9 @@ h1 {
     color: #8d8d99;
 }
 
+/* ==========================================
+   STATUS DO SISTEMA PRINCIPAL
+   ========================================== */
 .system-status {
     padding: 10px 20px;
     border-radius: 4px;
@@ -41,6 +47,9 @@ h1 {
 .status-stopped { background-color: #f75a68; color: #fff; animation: piscar 1s infinite; }
 .status-jammed { background-color: #e17055; color: #fff; animation: piscar 0.6s infinite; }
 
+/* ==========================================
+   GRID E CARDS DAS CUBAS (BALANÇAS)
+   ========================================== */
 .grid-container {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -57,17 +66,34 @@ h1 {
     transition: all 0.2s ease;
 }
 
+/* CORREÇÃO: Ajustado para alinhar o Título na esquerda e a Engrenagem na direita */
 .bin-header {
     background-color: #29292e;
     padding: 12px;
-    text-align: center;
     border-bottom: 2px solid #323238;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .bin-name {
     font-size: 1.3rem;
     font-weight: bold;
     color: #00b37e;
+}
+
+/* Botão da Engrenagem individual por cuba */
+.btn-regular-cuba {
+    background: none;
+    border: none;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: transform 0.2s;
+    padding: 0 5px;
+}
+
+.btn-regular-cuba:hover {
+    transform: rotate(45deg);
 }
 
 .bin-body {
@@ -86,42 +112,19 @@ h1 {
     font-weight: bold;
 }
 
+/* Estados de erro do pistão */
 .bin-error {
     border-color: #f75a68;
     background-color: #2d1e22;
 }
+
 .bin-error .bin-name {
     color: #f75a68;
 }
 
-footer {
-    background-color: #202024;
-    padding: 20px;
-    text-align: center;
-}
-
-.btn-reset {
-    background-color: #00b37e;
-    color: white;
-    border: none;
-    padding: 15px 30px;
-    font-size: 1rem;
-    font-weight: bold;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.btn-reset:hover {
-    background-color: #00875f;
-}
-
-@keyframes piscar {
-    0% { opacity: 1; }
-    50% { opacity: 0.5; }
-    100% { opacity: 1; }
-}
-
+/* ==========================================
+   PAINÉIS DE REGULAGEM GERAL & CONTROLES
+   ========================================== */
 .ihm-container {
     background-color: #222222;
     color: #ffffff;
@@ -168,8 +171,11 @@ footer {
     background-color: #218838;
 }
 
+/* ==========================================
+   ESTRUTURA DA JANELA FLUTUANTE (MODAL SETUP)
+   ========================================== */
 .modal-oculto {
-    display: none; 
+    display: none; /* Controlado pelo script.js mudando para 'flex' ao abrir */
     position: fixed;
     z-index: 1000; 
     left: 0;
@@ -184,9 +190,10 @@ footer {
 .modal-conteudo {
     background-color: #222;
     color: #fff;
-    padding: 20px;
+    padding: 25px;
     border-radius: 8px;
-    width: 300px;
+    width: 90%;
+    max-width: 400px;
     border: 1px solid #444;
     position: relative;
     box-shadow: 0px 4px 15px rgba(0,0,0,0.5);
@@ -199,71 +206,25 @@ footer {
     font-size: 24px;
     cursor: pointer;
     color: #aaa;
+    transition: color 0.2s;
 }
+
 .fechar-modal:hover { 
     color: #fff; 
 }
 
-.modal-campo {
-    margin-top: 15px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.btn-regular-cuba {
-    background: none;
-    border: none;
-    font-size: 1.1rem;
-    cursor: pointer;
-    transition: transform 0.2s;
-    padding: 0 5px;
-}
-
-.btn-regular-cuba:hover {
-    transform: rotate(45deg);
-}
-.setup-body {
-    background-color: #111111;
-    color: #ffffff;
-    font-family: sans-serif;
-    padding: 40px;
-}
-
-.setup-card {
-    max-width: 500px;
-    margin: 0 auto;
-    background-color: #222222;
-    padding: 30px;
-    border-radius: 8px;
-    border: 1px solid #333333;
-}
-
-.setup-subtitulo {
-    color: #aaaaaa;
-}
-
-#tituloCuba {
-    color: #28a745;
-}
-
-.setup-divisor {
-    border-color: #333333;
-    margin: 20px 0;
-}
-
-.setup-campo {
-    margin-bottom: 20px;
-}
-
-.setup-campo label {
-    display: block;
-    margin-bottom: 8px;
-}
+/* Configurações internas do formulário de Setup */
+.setup-subtitulo { color: #aaaaaa; margin-bottom: 5px; }
+#tituloCuba { color: #28a745; font-weight: bold; }
+.setup-divisor { border-color: #333333; margin: 15px 0; }
+.setup-campo { margin-bottom: 20px; }
+.setup-campo label { display: block; margin-bottom: 8px; font-size: 0.95rem; }
 
 .setup-campo .ihm-input {
     width: 100%;
     box-sizing: border-box;
+    text-align: left;
+    padding: 10px;
 }
 
 .btn-bloco {
@@ -284,4 +245,36 @@ footer {
 
 .btn-voltar:hover {
     background-color: #444444;
+}
+
+/* ==========================================
+   RODAPÉ E ANIMAÇÕES
+   ========================================== */
+footer {
+    background-color: #202024;
+    padding: 20px;
+    text-align: center;
+    border-top: 1px solid #29292e;
+}
+
+.btn-reset {
+    background-color: #00b37e;
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    font-size: 1rem;
+    font-weight: bold;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-reset:hover {
+    background-color: #00875f;
+}
+
+@keyframes piscar {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
 }

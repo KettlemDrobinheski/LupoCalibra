@@ -92,18 +92,21 @@ function buildDashboard() {
         const borderColor = bin.side === "Esquerdo" ? "border-left: 5px solid #00b37e;" : "border-left: 5px solid #4ea8de;";
 
         card.innerHTML = `
-            <div class="bin-header" style="${borderColor}">
-                <span class="bin-name">${binKey.replace('_L', '').replace('_R', '')}</span>
-                <small style="display:block; color:#8d8d99;">Lado ${bin.side}</small>
-            </div>
-            <div class="bin-body">
-                <p><strong>Faixa Alvo:</strong> ${weightRange}</p>
-                <p><strong>Último Peso:</strong> <span id="weight-${binKey}" class="weight-value">---</span></p>
-                <p><strong>Contagem:</strong> <span id="count-${binKey}">0</span> un</p>
-                <p><strong>Erros (Pistão):</strong> <span id="errors-${binKey}" class="error-count">0 / ${MAX_ALLOWED_ERRORS}</span></p>
-                <p><strong>Status:</strong> <span id="status-${binKey}" class="status-text">${bin.status}</span></p>
-            </div>
-        `;
+    <div class="bin-header" style="${borderColor}">
+        <div class="bin-header-left">
+            <span class="bin-name">${binKey.replace('_L', '').replace('_R', '')}</span>
+            <small style="display:block; color:#8d8d99;">Lado ${bin.side}</small>
+        </div>
+        <button class="btn-regular-cuba" onclick="abrirRegulagemCuba('${binKey}')">⚙️</button>
+    </div>
+    <div class="bin-body">
+        <p><strong>Faixa Alvo:</strong> ${weightRange}</p>
+        <p><strong>Último Peso:</strong> <span id="weight-${binKey}" class="weight-value">---</span></p>
+        <p><strong>Contagem:</strong> <span id="count-${binKey}">0</span> un</p>
+        <p><strong>Erros (Pistão):</strong> <span id="errors-${binKey}" class="error-count">0 / ${MAX_ALLOWED_ERRORS}</span></p>
+        <p><strong>Status:</strong> <span id="status-${binKey}" class="status-text">${bin.status}</span></p>
+    </div>
+`;
         binsGrid.appendChild(card);
     });
 }
