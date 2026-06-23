@@ -231,7 +231,7 @@ window.onload = function() {
 };
 
 function abrirRegulagemCuba(idCuba) {
-    window.location.href = `regulagem.html?cuba=${BL_06_L}`;
+    window.location.href = `regulagem.html?cuba=${idCuba}`;
 }
 
 function abrirJanelaRegulagem() {
