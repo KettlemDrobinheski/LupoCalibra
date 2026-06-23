@@ -36,7 +36,8 @@ let systemInterlockActive = false;
 let machineJamActive = false;     
 let downtimeSeconds = 0;          
 let simulationInterval = null;
-let downtimeInterval = null;      
+let downtimeInterval = null;     
+let isResetting = false;
 
 const binsGrid = document.getElementById('binsGrid');
 const systemStatusLabel = document.getElementById('systemStatusLabel');
@@ -132,6 +133,9 @@ function updateLiveValues() {
 }
 
 function simulateBelt() {
+
+    if (isResetting) return;
+    
     if (systemInterlockActive || machineJamActive) return;
 
     if (Math.random() < 0.005) { 
@@ -202,6 +206,12 @@ function triggerMachineJam() {
 }
 
 function resetSystem() {
+    isResetting = true;
+    var highestId = window.setTimeout(() => {}, 0);
+    for (var i = 0; i < highestId; i++) {
+        window.clearTimeout(i);
+        window.clearInterval(i);
+    }
     console.log("Comando de Reset executado.");
 
     clearInterval(downtimeInterval);
@@ -219,11 +229,15 @@ function resetSystem() {
     if (systemStatusLabel) {
         systemStatusLabel.textContent = "System OK";
         systemStatusLabel.className = "system-status status-running";
+       
     }
 
     salvarProducaoNoFirestore();
     updateLiveValues();
 }
+setTimeout(() => {
+        isResetting = false; 
+    }, 1000);
 
 window.onload = function() {
     buildDashboard();
