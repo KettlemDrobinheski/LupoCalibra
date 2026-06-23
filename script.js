@@ -237,3 +237,27 @@ function abrirRegulagemCuba(idCuba) {
 function abrirJanelaRegulagem() {
     window.location.href = 'regulagem.html';
 }
+
+const botaoResetPainel = document.getElementById('btnResetConfigCuba') || document.getElementById('btnReset'); 
+
+if (botaoResetPainel) {
+    botaoResetPainel.addEventListener('click', () => {
+        const confirmar = confirm("Aviso Operacional: Deseja realmente resetar os estados e alertas do painel?");
+        
+        if (confirmar) {
+            db.collection("estado_sistema").doc("geral").set({
+                alertaAtivo: false,
+                tempoEsteiraTravada: 0,
+                ultimaLimpeza: new Date().toLocaleString()
+            }, { merge: true })
+            .then(() => {
+                alert("✅ Painel resetado e reconfigurado com sucesso!");
+                window.location.reload(); 
+            })
+            .catch((error) => {
+                console.error("Erro ao rodar o reset no Firebase: ", error);
+                alert("❌ Falha ao conectar com o banco para resetar.");
+            });
+        }
+    });
+}
