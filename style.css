@@ -213,7 +213,6 @@ h1 {
     color: #fff; 
 }
 
-/* Configurações internas do formulário de Setup */
 .setup-subtitulo { color: #aaaaaa; margin-bottom: 5px; }
 #tituloCuba { color: #28a745; font-weight: bold; }
 .setup-divisor { border-color: #333333; margin: 15px 0; }
@@ -247,9 +246,6 @@ h1 {
     background-color: #444444;
 }
 
-/* ==========================================
-   RODAPÉ E ANIMAÇÕES
-   ========================================== */
 footer {
     background-color: #202024;
     padding: 20px;
@@ -277,4 +273,19 @@ footer {
     0% { opacity: 1; }
     50% { opacity: 0.5; }
     100% { opacity: 1; }
+}
+
+.select-industrial {
+    width: 100%;
+    padding: 12px;
+    background-color: #121214;
+    color: #ffffff;
+    border: 1px solid #29292e;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 1rem;
+}
+
+.select-industrial optgroup {
+    background-color: #202024;
 }
