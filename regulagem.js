@@ -54,7 +54,7 @@ function carregarDadosCuba(idCuba) {
     
     console.log(`Buscando dados da: ${idCuba}...`);
     
-    db.collection("configuracoes_cubas").doc(`cuba_${idCuba}`).get()
+    db.collection("configuracoes_cubas").doc(idCuba).get()
     .then((doc) => {
         if (doc.exists) {
             const dados = doc.data();
@@ -94,7 +94,7 @@ document.getElementById('btnSalvarConfigCuba').addEventListener('click', () => {
         nomeExibicao = selectCuba.options[selectCuba.selectedIndex].text;
     }
 
-    db.collection("configuracoes_cubas").doc(`cuba_${cubaEmEdicao}`).set({
+    db.collection("configuracoes_cubas").doc(cubaEmEdicao).set({
         pesoAlvo: pesoAlvo,
         toleranciaPorcentagem: tolerancia,
         ultimaAtualizacao: new Date().toLocaleString()
