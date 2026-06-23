@@ -14,11 +14,40 @@ if (!firebase.apps.length) {
 const db = firebase.firestore();
 
 const selectCuba = document.getElementById('selecaoCuba');
-const campoSelecaoGeral = document.getElementById('campoSelecaoGeral');
-const textoVisualizacaoIndividual = document.getElementById('textoVisualizacaoIndividual');
+const campoSelecaoConjunta = document.getElementById('campoSelecaoConjunta');
+const textoIndividual = document.getElementById('textoVisualizacaoIndividual');
 const tituloCuba = document.getElementById('tituloCuba');
 
 let cubaEmEdicao = "";
+
+window.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const cubaInicial = urlParams.get('cuba');
+    const modo = urlParams.get('modo');
+
+
+    if (modo === 'conjunto') {
+        campoSelecaoConjunta.style.display = 'block'; 
+        textoIndividual.style.display = 'none';
+        
+        cubaEmEdicao = selectCuba.value;
+    } 
+    
+    else if (cubaInicial) {
+        campoSelecaoConjunta.style.display = 'none';
+        textoIndividual.style.display = 'block';
+        
+        tituloCuba.innerText = cubaInicial.replace('cuba_', 'Cuba ').replace('_', ' ');
+        cubaEmEdicao = cubaInicial; 
+    }
+
+    carregarDadosCuba(cubaEmEdicao);
+});
+
+selectCuba.addEventListener('change', (e) => {
+    cubaEmEdicao = e.target.value;
+    carregarDadosCuba(cubaEmEdicao);
+});
 
 function carregarDadosCuba(idCuba) {
     if (!idCuba) return;
@@ -36,42 +65,15 @@ function carregarDadosCuba(idCuba) {
                 document.getElementById('toleranciaCuba').value = dados.toleranciaPorcentagem;
             }
         } else {
-            console.log("Sem configuração prévia para esta cuba. Usando padrões.");
+            console.log("Sem dados prévios no banco. Aplicando padrões de fábrica.");
             document.getElementById('pesoAlvoCuba').value = 150;
             document.getElementById('toleranciaCuba').value = 10;
         }
     })
     .catch((error) => {
-        console.error("Erro ao carregar dados iniciais: ", error);
+        console.error("Erro ao carregar dados do Firebase: ", error);
     });
 }
-
-window.addEventListener('DOMContentLoaded', () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const cubaIncial = urlParams.get('cuba');
-    const modoTopo = urlParams.get('modo'); 
-
-    if (modoTopo === 'topo') {
-        campoSelecaoGeral.style.display = 'block';
-        textoVisualizacaoIndividual.style.display = 'none';
-        
-        cubaEmEdicao = selectCuba.value;
-    } else if (cubaIncial) {
-        campoSelecaoGeral.style.display = 'none';
-        textoVisualizacaoIndividual.style.display = 'block';
-        
-    
-        tituloCuba.innerText = cubaIncial.replace('_', ' ');
-        cubaEmEdicao = cubaIncial;
-    }
-
-    carregarDadosCuba(cubaEmEdicao);
-});
-
-selectCuba.addEventListener('change', (e) => {
-    cubaEmEdicao = e.target.value;
-    carregarDadosCuba(cubaEmEdicao);
-});
 
 document.getElementById('btnSalvarConfigCuba').addEventListener('click', () => {
     const pesoAlvo = parseInt(document.getElementById('pesoAlvoCuba').value, 10);
@@ -88,7 +90,7 @@ document.getElementById('btnSalvarConfigCuba').addEventListener('click', () => {
     }
 
     let nomeExibicao = `Cuba ${cubaEmEdicao.replace('_', ' ')}`;
-    if (campoSelecaoGeral.style.display === 'block') {
+    if (campoSelecaoConjunta.style.display === 'block') {
         nomeExibicao = selectCuba.options[selectCuba.selectedIndex].text;
     }
 
@@ -98,14 +100,14 @@ document.getElementById('btnSalvarConfigCuba').addEventListener('click', () => {
         ultimaAtualizacao: new Date().toLocaleString()
     }, { merge: true })
     .then(() => {
-        alert(`Configurações da ${nomeExibicao} aplicadas com sucesso!`);
-     
-        if (campoSelecaoGeral.style.display === 'none') {
+        alert(`✅ Configurações da ${nomeExibicao} aplicadas com sucesso!`);
+       
+        if (campoSelecaoConjunta.style.display === 'none') {
             window.location.href = 'index.html';
         }
     })
     .catch((error) => {
         console.error("Erro ao salvar no Firebase: ", error);
-        alert("Erro ao conectar com a nuvem.");
+        alert("❌ Erro ao conectar com a nuvem.");
     });
 });
