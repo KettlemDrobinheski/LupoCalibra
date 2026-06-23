@@ -14,7 +14,7 @@ if (!firebase.apps.length) {
 const db = firebase.firestore();
 
 const selectCuba = document.getElementById('selecaoCuba');
-const campoSelecaoConjunta = document.getElementById('campoSelecaoConjunta');
+const campoSelecaoConjunta = document.getElementById('campoSelecaoConjunta') || document.getElementById('campoSelecaoGeral');
 const textoIndividual = document.getElementById('textoVisualizacaoIndividual');
 const tituloCuba = document.getElementById('tituloCuba');
 

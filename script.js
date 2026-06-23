@@ -231,11 +231,11 @@ window.onload = function() {
 };
 
 function abrirRegulagemCuba(idCuba) {
-    window.location.href = `regulagem.html?cuba=${idCuba}`;
+    window.location.href = `regulagem.html?cuba=${idDaCuba}`;
 }
 
 function abrirJanelaRegulagem() {
-    window.location.href = 'regulagem.html';
+    window.location.href = 'regulagem.html?modo=conjunto';
 }
 
 const botaoResetPainel = document.getElementById('btnResetConfigCuba') || document.getElementById('btnReset'); 

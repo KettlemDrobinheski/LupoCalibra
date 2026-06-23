@@ -14,31 +14,35 @@
         <p class="setup-subtitulo">Ajuste de parâmetros das Balanças (BLs)</p>
         <hr class="setup-divisor">
 
-        <div class="setup-campo">
-            <label for="selecaoCuba">Selecione a Balança (BL):</label>
-            <select id="selecaoCuba" class="ihm-input select-industrial">
-                <optgroup label="LADO ESQUERDO (Calha A)">
-                    <option value="cuba_1_L">BL 1 - Esquerda</option>
-                    <option value="cuba_2_L">BL 2 - Esquerda</option>
-                    <option value="cuba_3_L">BL 3 - Esquerda</option>
-                    <option value="cuba_4_L">BL 4 - Esquerda</option>
-                    <option value="cuba_5_L">BL 5 - Esquerda</option>
-                    <option value="cuba_6_L">BL 6 - Esquerda</option>
-                    <option value="cuba_7_L">BL 7 - Esquerda</option>
-                    <option value="cuba_8_L">BL 8 - Esquerda</option>
-                </optgroup>
-                <optgroup label="LADO DIREITO (Calha B)">
-                    <option value="cuba_1_R">BL 1 - Direita</option>
-                    <option value="cuba_2_R">BL 2 - Direita</option>
-                    <option value="cuba_3_R">BL 3 - Direita</option>
-                    <option value="cuba_4_R">BL 4 - Direita</option>
-                    <option value="cuba_5_R">BL 5 - Direita</option>
-                    <option value="cuba_6_R">BL 6 - Direita</option>
-                    <option value="cuba_7_R">BL 7 - Direita</option>
-                    <option value="cuba_8_R">BL 8 - Direita</option>
-                </optgroup>
-            </select>
-            </div>
+        <p id="textoVisualizacaoIndividual" class="setup-subtitulo">
+    Configurando os parâmetros da: <strong id="tituloCuba">...</strong>
+</p>
+
+<div id="campoSelecaoConjunta" style="display: none; margin-bottom: 15px;">
+    <label for="selecaoCuba">Selecione a Balança (BL) para Regular:</label>
+    <select id="selecaoCuba" class="select-industrial">
+        <optgroup label="LADO ESQUERDO (Calha A)">
+            <option value="1_L">BL 1 - Esquerda</option>
+            <option value="2_L">BL 2 - Esquerda</option>
+            <option value="3_L">BL 3 - Esquerda</option>
+            <option value="4_L">BL 4 - Esquerda</option>
+            <option value="5_L">BL 5 - Esquerda</option>
+            <option value="6_L">BL 6 - Esquerda</option>
+            <option value="7_L">BL 7 - Esquerda</option>
+            <option value="8_L">BL 8 - Esquerda</option>
+        </optgroup>
+        <optgroup label="LADO DIREITO (Calha B)">
+            <option value="1_R">BL 1 - Direita</option>
+            <option value="2_R">BL 2 - Direita</option>
+            <option value="3_R">BL 3 - Direita</option>
+            <option value="4_R">BL 4 - Direita</option>
+            <option value="5_R">BL 5 - Direita</option>
+            <option value="6_R">BL 6 - Direita</option>
+            <option value="7_R">BL 7 - Direita</option>
+            <option value="8_R">BL 8 - Direita</option>
+        </optgroup>
+    </select>
+</div>
 
         <div class="setup-campo">
             <label for="pesoAlvoCuba">Peso Alvo da Peça (g):</label>
