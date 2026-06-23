@@ -1,24 +1,34 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LINHA DE EMBALAGEM BL EXPORT</title>
+    <link rel="stylesheet" href="style.css"> 
 </head>
 <body>
-    
+
+    <header>
+        <div class="ihm-container">
+            <div class="ihm-header-alinhado">
+                <div>
+                    <h3 style="margin: 0; font-size: 1.1rem; color: #ffffff;">LINHA DE EMBALAGEM BL EXPORT</h3>
+                    <p class="subtitle">Sistema de Integridade do Desviador de Alta Velocidade</p>
+                </div>
+                <button class="btn-setup-geral" onclick="abrirJanelaRegulagem()">⚙️</button>
+            </div>
+            
+            <div id="alertaTrava" class="status-stopped" style="padding: 10px; margin-top: 15px; border-radius: 4px; text-align: center; font-weight: bold;">
+                ESTEIRA TRAVADA - TEMPO PARADO: 30S
+            </div>
+        </div>
+    </header>
+
+    <main class="grid-container" id="binsGrid">
+        </main>
+
+    <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore-compat.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
-<div class="ihm-container">
-    <div class="ihm-header-alinhado">
-        <div>
-            <h3 style="margin: 0; font-size: 1.1rem; color: #ffffff;">LINHA DE EMBALAGEM BL EXPORT</h3>
-            <p class="subtitle">Sistema de Integridade do Desviador de Alta Velocidade</p>
-        </div>
-        <button class="btn-setup-geral" onclick="abrirJanelaRegulagem()">⚙️</button>
-    </div>
-    
-    <div id="alertaTrava" class="status-stopped" style="padding: 10px; margin-top: 15px; border-radius: 4px; text-align: center; font-weight: bold;">
-        ESTEIRA TRAVADA - TEMPO PARADO: 30S
-    </div>
-</div>
