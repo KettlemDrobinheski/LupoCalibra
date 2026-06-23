@@ -11,14 +11,18 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-const cubaEmEdicao = localStorage.getItem('cubaSelecionada');
+const selectCuba = document.getElementById('selecaoCuba');
 
-if (!cubaEmEdicao) {
-    alert("Nenhuma cuba selecionada!");
-    window.location.href = 'index.html';
-}
+window.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const cubaIncial = urlParams.get('cuba');
 
-document.getElementById('tituloCuba').innerText = `Cuba ${cubaEmEdicao}`;
+    if (cubaIncial) {
+        
+        selectCuba.value = cubaIncial;
+    }
+    carregarDadosCuba(selectCuba.value);
+});
 
 db.collection("configuracoes_cubas").doc(`cuba_${cubaEmEdicao}`).get()
 .then((doc) => {

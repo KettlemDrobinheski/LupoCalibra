@@ -231,7 +231,9 @@ window.onload = function() {
 };
 
 function abrirRegulagemCuba(idCuba) {
-    localStorage.setItem('cubaSelecionada', idCuba);
-    
+    window.location.href = `regulagem.html?cuba=${idCuba}`;
+}
+
+function abrirJanelaRegulagem() {
     window.location.href = 'regulagem.html';
 }
