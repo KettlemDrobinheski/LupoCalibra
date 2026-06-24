@@ -187,13 +187,16 @@ function triggerInterlock(reason) {
 }
 
 function triggerMachineJam() {
+    if (isResetting) return;
+
     machineJamActive = true;
     if (systemStatusLabel) {
-        systemStatusLabel.className = "system-status status-jammed"; 
+        systemStatusLabel.className = "system-status status-jammed";
+        systemStatusLabel.textContent = "ESTEIRA TRAVADA";
     }
 
     downtimeSeconds = 0;
-    clearInterval(downtimeInterval); 
+    clearInterval(downtimeInterval);
     downtimeInterval = setInterval(() => {
         downtimeSeconds++;
         if (systemStatusLabel) {
@@ -202,16 +205,17 @@ function triggerMachineJam() {
     }, 1000);
 
     salvarProducaoNoFirestore();
-    registrarFalhaNoFirestore("JAM", "Acúmulo de produto na calha principal detectado pelo sensor óptico.");
+    registrarFalhaNoFirestore("JAM", "Acúmulo de produto na calha principal");
 }
 
 function resetSystem() {
-    isResetting = true;
+    if (isResetting) return;
     var highestId = window.setTimeout(() => {}, 0);
     for (var i = 0; i < highestId; i++) {
         window.clearTimeout(i);
         window.clearInterval(i);
     }
+}
     console.log("Comando de Reset executado.");
 
     clearInterval(downtimeInterval);
@@ -234,7 +238,7 @@ function resetSystem() {
 
     salvarProducaoNoFirestore();
     updateLiveValues();
-}
+    
 setTimeout(() => {
         isResetting = false; 
     }, 1000);
@@ -254,9 +258,9 @@ function abrirJanelaRegulagem() {
 
 const botaoResetPainel = document.getElementById('btnResetConfigCuba') || document.getElementById('btnReset'); 
 
-if (botaoResetPainel) {
-    botaoResetPainel.addEventListener('click', () => {
-        const confirmar = confirm("Aviso Operacional: Deseja realmente resetar os estados e alertas do painel?");
+if (botaoResetPainel){
+    botaoResetPainel.addEventListener('click'), () => {
+        const confirmar = confirm("Aviso Operacional: Deseja realmente resetar os estados e alertas do painel?");}
         
         if (confirmar) {
             db.collection("estado_sistema").doc("geral").set({
@@ -273,5 +277,4 @@ if (botaoResetPainel) {
                 alert("❌ Falha ao conectar com o banco para resetar.");
             });
         }
-    });
-}
+    }

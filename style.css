@@ -1,6 +1,4 @@
-/* ==========================================
-   ESTILOS GERAIS DA INTERFACE (IHM)
-   ========================================== */
+
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: #121214;
@@ -33,9 +31,6 @@ h1 {
     color: #8d8d99;
 }
 
-/* ==========================================
-   STATUS DO SISTEMA PRINCIPAL
-   ========================================== */
 .system-status {
     padding: 10px 20px;
     border-radius: 4px;
@@ -47,9 +42,7 @@ h1 {
 .status-stopped { background-color: #f75a68; color: #fff; animation: piscar 1s infinite; }
 .status-jammed { background-color: #e17055; color: #fff; animation: piscar 0.6s infinite; }
 
-/* ==========================================
-   GRID E CARDS DAS CUBAS (BALANÇAS)
-   ========================================== */
+
 .grid-container {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -66,7 +59,6 @@ h1 {
     transition: all 0.2s ease;
 }
 
-/* CORREÇÃO: Ajustado para alinhar o Título na esquerda e a Engrenagem na direita */
 .bin-header {
     background-color: #29292e;
     padding: 12px;
@@ -82,7 +74,6 @@ h1 {
     color: #00b37e;
 }
 
-/* Botão da Engrenagem individual por cuba */
 .btn-regular-cuba {
     background: none;
     border: none;
@@ -112,7 +103,6 @@ h1 {
     font-weight: bold;
 }
 
-/* Estados de erro do pistão */
 .bin-error {
     border-color: #f75a68;
     background-color: #2d1e22;
@@ -122,9 +112,6 @@ h1 {
     color: #f75a68;
 }
 
-/* ==========================================
-   PAINÉIS DE REGULAGEM GERAL & CONTROLES
-   ========================================== */
 .ihm-container {
     background-color: #222222;
     color: #ffffff;
@@ -171,9 +158,6 @@ h1 {
     background-color: #218838;
 }
 
-/* ==========================================
-   ESTRUTURA DA JANELA FLUTUANTE (MODAL SETUP)
-   ========================================== */
 .modal-oculto {
     display: none; /* Controlado pelo script.js mudando para 'flex' ao abrir */
     position: fixed;
