@@ -2,10 +2,38 @@
   "name": "lupocalibra",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
+  "packageManager": "yarn@1.22.22",
+  "engines": {
+    "yarn": "1.22.22"
+  },
   "scripts": {
     "dev": "next dev",
+    "prebuild": "node --experimental-strip-types scripts/check-env.mjs",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "typecheck": "next typegen && tsc --noEmit",
+    "test": "node --experimental-strip-types --test tests/system.test.ts tests/auth.test.ts",
+    "test:auth:emulator": "firebase emulators:exec --only auth --project demo-lupocalibra-tests \"node --experimental-strip-types --test --experimental-test-isolation=none tests/login.emulator.test.mjs\"",
+    "test:rules": "node --test tests/firestore.rules.test.mjs",
+    "test:rules:emulator": "firebase emulators:exec --only firestore --project demo-lupocalibra-tests \"yarn test:rules\"",
+    "audit:secrets": "node scripts/audit-secrets.mjs"
+  },
+  "dependencies": {
+    "firebase": "12.18.0",
+    "next": "16.3.4",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "5.0.2",
+    "@types/node": "22.20.1",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.7",
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.3.4",
+    "firebase-tools": "15.29.0",
+    "typescript": "5.9.3"
   }
 }

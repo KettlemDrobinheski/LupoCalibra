@@ -159,7 +159,7 @@ h1 {
 }
 
 .modal-oculto {
-    display: none; /* Controlado pelo script.js mudando para 'flex' ao abrir */
+    display: none;
     position: fixed;
     z-index: 1000; 
     left: 0;
