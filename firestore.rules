@@ -1,0 +1,110 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function authorized() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/acessos/$(request.auth.uid))
+        && get(/databases/$(database)/documents/acessos/$(request.auth.uid)).data.active == true
+        && get(/databases/$(database)/documents/acessos/$(request.auth.uid)).data.role in ['ADMIN', 'OPERADOR'];
+    }
+    function admin() {
+      return authorized()
+        && get(/databases/$(database)/documents/acessos/$(request.auth.uid)).data.role == 'ADMIN';
+    }
+    function canonicalBin(id) {
+      return id.matches('^BL_(06|07|08|09|10|11|12|200UP)_(L|R)$');
+    }
+    function validConfig() {
+      let data = request.resource.data;
+      return data.pesoAlvo is number && data.pesoAlvo > 0
+        && data.toleranciaPorcentagem is number
+        && data.toleranciaPorcentagem >= 0 && data.toleranciaPorcentagem <= 100
+        && data.ultimaAtualizacao is string && data.ultimaAtualizacao.size() > 0
+        && data.ultimaAtualizacao.size() <= 100;
+    }
+    function validProduction() {
+      let data = request.resource.data;
+      return data.ultimo_registro == request.time
+        && (!('motivoParada' in data) || (data.motivoParada is string && data.motivoParada.size() <= 500))
+        && data.systemInterlockActive is bool && data.machineJamActive is bool
+        && ((data.statusGeral == 'OPERACIONAL' && !data.systemInterlockActive && !data.machineJamActive)
+          || (data.statusGeral == 'BLOQUEADO' && data.systemInterlockActive && !data.machineJamActive)
+          || (data.statusGeral == 'JAMMED' && !data.systemInterlockActive && data.machineJamActive));
+    }
+    function validReset() {
+      let data = request.resource.data;
+      return data.alertaAtivo == false && data.tempoEsteiraTravada == 0
+        && data.ultimaLimpeza is string && data.ultimaLimpeza.size() > 0
+        && data.ultimaLimpeza.size() <= 100;
+    }
+    function operatorReset() {
+      let production = getAfter(/databases/$(database)/documents/producao_diaria/linha_export).data;
+      let reset = getAfter(/databases/$(database)/documents/estado_sistema/geral).data;
+      return authorized()
+        && production.ultimo_registro == request.time
+        && production.statusGeral == 'OPERACIONAL'
+        && production.motivoParada == ''
+        && production.systemInterlockActive == false && production.machineJamActive == false
+        && reset.alertaAtivo == false && reset.tempoEsteiraTravada == 0
+        && reset.resetEm == request.time && reset.resetPor == request.auth.uid
+        && reset.resetToken is string && reset.resetToken.size() == 36
+        && production.resetToken == reset.resetToken
+        && (!exists(/databases/$(database)/documents/producao_diaria/linha_export)
+          || !('resetToken' in get(/databases/$(database)/documents/producao_diaria/linha_export).data)
+          || production.resetToken != get(/databases/$(database)/documents/producao_diaria/linha_export).data.resetToken);
+    }
+    function validStop() {
+      let data = request.resource.data;
+      return data.horario is timestamp && data.tipo in ['JAM', 'INTERLOCK']
+        && data.motivo is string && data.motivo.size() > 0 && data.motivo.size() <= 500
+        && data.duracao_segundos is int && data.duracao_segundos >= 0;
+    }
+
+    match /acessos/{uid} {
+      allow get: if request.auth != null && request.auth.uid == uid;
+      allow list, create, update, delete: if false;
+    }
+
+    match /configuracoes_cubas/{id} {
+      allow get, list: if authorized();
+      allow create: if admin() && canonicalBin(id) && validConfig()
+        && request.resource.data.keys().hasOnly(['pesoAlvo', 'toleranciaPorcentagem', 'ultimaAtualizacao']);
+      allow update: if admin() && canonicalBin(id) && validConfig()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pesoAlvo', 'toleranciaPorcentagem', 'ultimaAtualizacao']);
+      allow delete: if false;
+    }
+
+    match /producao_diaria/linha_export {
+      allow get: if authorized();
+      allow create: if (admin() || operatorReset()) && validProduction()
+        && request.resource.data.keys().hasOnly(['ultimo_registro', 'systemInterlockActive', 'machineJamActive', 'statusGeral', 'resetToken', 'motivoParada']);
+      allow update: if (admin() || operatorReset()) && validProduction()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ultimo_registro', 'systemInterlockActive', 'machineJamActive', 'statusGeral', 'resetToken', 'motivoParada']);
+      allow delete: if false;
+    }
+
+    match /estado_sistema/geral {
+      allow get: if authorized();
+      allow create: if (admin() || operatorReset()) && validReset()
+        && request.resource.data.keys().hasOnly(['alertaAtivo', 'tempoEsteiraTravada', 'ultimaLimpeza', 'resetToken', 'resetEm', 'resetPor']);
+      allow update: if (admin() || operatorReset()) && validReset()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['alertaAtivo', 'tempoEsteiraTravada', 'ultimaLimpeza', 'resetToken', 'resetEm', 'resetPor']);
+      allow delete: if false;
+    }
+
+    match /historico_paradas/{id} {
+      allow get, list: if admin();
+      allow create: if admin() && validStop()
+        && request.resource.data.keys().hasOnly(['horario', 'tipo', 'motivo', 'duracao_segundos']);
+      allow update: if admin() && validStop()
+        && request.resource.data.duracao_segundos >= resource.data.duracao_segundos
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['duracao_segundos']);
+      allow delete: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
