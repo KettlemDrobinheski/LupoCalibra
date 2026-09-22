@@ -7,6 +7,7 @@ export type Snapshot = {
   configError: string; configWarning: string; syncError: string; resetting: boolean;
   productionStatus: string | null;
   productionReason: string;
+  simulationStarted: boolean;
 };
 
 export class SystemStore {
@@ -14,6 +15,7 @@ export class SystemStore {
     system: initialSystem(), configs: {}, configReady: false, configLoaded: false,
     configError: '', configWarning: '', syncError: '', resetting: false,
     productionStatus: null, productionReason: '',
+    simulationStarted: false,
   };
   private listeners = new Set<() => void>();
   private timer: ReturnType<typeof setInterval> | undefined;
@@ -72,6 +74,7 @@ export class SystemStore {
     return this.stop;
   };
   stop = () => {
+    this.update({ simulationStarted: false });
     if (this.timer !== undefined) clearInterval(this.timer);
     this.timer = undefined;
     this.unsubscribe?.();
@@ -80,7 +83,7 @@ export class SystemStore {
     this.unsubscribeProduction = undefined;
   };
   tick(sample: Sample) {
-    if (this.state.resetting || !this.canOperate() || !this.productionReady) return;
+    if (!this.state.simulationStarted || this.state.resetting || !this.canOperate() || !this.productionReady) return;
     const previous = this.state.system;
     const next = this.state.configReady ? simulate(previous, this.state.configs, sample) : updateDowntime(previous, sample.now);
     if (previous === next) return;
@@ -93,6 +96,12 @@ export class SystemStore {
       });
     }
   }
+  beginSimulation = () => {
+    if (!this.canOperate() || this.state.simulationStarted || this.state.resetting
+      || !this.state.configReady || !this.productionReady || this.state.system.phase !== 'running'
+      || (this.repo.watchProduction && this.state.productionStatus !== 'OPERACIONAL')) return;
+    this.update({ simulationStarted: true });
+  };
   private enqueue(write: () => Promise<void>) {
     const result = this.writes.then(write);
     this.writes = result.catch(() => {});

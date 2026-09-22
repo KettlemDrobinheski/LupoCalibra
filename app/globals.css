@@ -37,3 +37,5 @@ header .ihm-container { width: 100%; margin-bottom: 0; }
 .session-actions span { overflow-wrap: anywhere; }
 .session-actions button { border: 1px solid #555; border-radius: 4px; background: #29292e; color: #fff; padding: 8px 14px; cursor: pointer; }
 button:disabled, fieldset:disabled { cursor: not-allowed; }
+
+.status-ready { background: #f1c40f; color: #202024; }

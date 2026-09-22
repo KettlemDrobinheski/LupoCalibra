@@ -124,10 +124,54 @@ function fakeRepository() {
   return { repo, writes, receive: (result: ConfigurationResult) => receive(result), fail: (error: Error) => fail(error), unsubscribed: () => unsubscriptions };
 }
 
+test('simulation waits for an explicit operator command and repeated starts preserve counts', () => {
+  const fake = fakeRepository();
+  const store = new SystemStore(fake.repo);
+  store.start();
+  try {
+    store.tick(piece);
+    assert.equal(store.getSnapshot().system.bins.BL_06_L.totalProcessed, 0);
+    assert.equal(store.getSnapshot().simulationStarted, false);
+    store.beginSimulation();
+    store.tick(piece);
+    store.beginSimulation();
+    assert.equal(store.getSnapshot().system.bins.BL_06_L.totalProcessed, 1);
+    store.start();
+    store.tick(piece);
+    assert.equal(store.getSnapshot().simulationStarted, false);
+    assert.equal(store.getSnapshot().system.bins.BL_06_L.totalProcessed, 1);
+  } finally { store.stop(); }
+});
+
+test('start is denied for administrators, invalid settings and a saved alarm', () => {
+  const fake = fakeRepository();
+  let operator = false;
+  let receive: (status: string) => void = () => {};
+  fake.repo.watchProduction = next => { receive = next; next('OPERACIONAL'); return () => {}; };
+  const store = new SystemStore(fake.repo, () => operator);
+  store.start();
+  try {
+    store.beginSimulation();
+    assert.equal(store.getSnapshot().simulationStarted, false);
+    operator = true;
+    fake.fail(new Error('offline'));
+    store.beginSimulation();
+    assert.equal(store.getSnapshot().simulationStarted, false);
+    fake.receive(readConfigs([]));
+    receive('JAMMED');
+    store.beginSimulation();
+    assert.equal(store.getSnapshot().simulationStarted, false);
+    receive('OPERACIONAL');
+    store.beginSimulation();
+    assert.equal(store.getSnapshot().simulationStarted, true);
+  } finally { store.stop(); }
+});
+
 test('store cleans up its listener, pauses on config errors and applies live settings', async () => {
   const fake = fakeRepository();
   const store = new SystemStore(fake.repo);
   store.start();
+  store.beginSimulation();
   try {
     fake.receive(readConfigs([{ id: 'BL_06_L', data: { pesoAlvo: 150, toleranciaPorcentagem: 0 } }]));
     store.tick({ ...piece, weight: 150 });
@@ -137,6 +181,7 @@ test('store cleans up its listener, pauses on config errors and applies live set
     assert.equal(store.getSnapshot().system.bins.BL_06_L.totalProcessed, 1);
     assert.match(store.getSnapshot().configError, /permission-denied/);
     store.start();
+  store.beginSimulation();
     assert.equal(fake.unsubscribed(), 1);
     await store.saveConfig('BL_06_L', { pesoAlvo: 170, toleranciaPorcentagem: 0 });
     assert.equal(store.getSnapshot().configs.BL_06_L?.pesoAlvo, 170);
@@ -153,6 +198,7 @@ test('double reset writes once, blocks simulation while pending and preserves st
     return new Promise<void>((_resolve, reject) => { rejectWrite = reject; });
   };
   store.start();
+  store.beginSimulation();
   try {
     store.tick(piece);
     const before = store.getSnapshot().system;
@@ -177,6 +223,7 @@ test('stop persistence is ordered before reset and failures remain visible', asy
   const fake = fakeRepository();
   const store = new SystemStore(fake.repo);
   store.start();
+  store.beginSimulation();
   try {
     store.tick({ ...piece, jam: true });
     await store.reset();
@@ -207,6 +254,7 @@ test('operator reset preserves alarm while pending or rejected and clears it onl
   };
   const store = new SystemStore(repo, () => false, () => true);
   store.start();
+  store.beginSimulation();
   try {
     const failed = store.reset();
     await store.reset();
@@ -237,6 +285,7 @@ test('a new server alarm received during reset is not overwritten by the reset a
   fake.repo.persist = () => new Promise<void>(resolve => { resolveWrite = resolve; });
   const store = new SystemStore(fake.repo, () => false, () => true);
   store.start();
+  store.beginSimulation();
   try {
     const pending = store.reset();
     await new Promise(resolve => setImmediate(resolve));
@@ -254,6 +303,7 @@ test('remote operator reset resumes the active simulator and clears its weight-e
   fake.repo.watchProduction = next => { receive = next; next('OPERACIONAL', 'old-reset'); return () => {}; };
   const store = new SystemStore(fake.repo);
   store.start();
+  store.beginSimulation();
   try {
     store.tick(piece);
     for (let i = 0; i < 5; i++) store.tick({ ...piece, weight: 190, binId: 'BL_06_L' });

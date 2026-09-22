@@ -14,23 +14,27 @@ const formatWeight = (weight: number) => `${Number(weight.toFixed(2))}g`;
 export default function Dashboard() {
   const { session } = useAuth();
   const operator = canOperate(session);
-  const { system, configs, resetting, configReady, configError, configWarning, syncError, reset, reconnect, productionStatus, productionReason } = useSystem();
+  const { simulationStarted, beginSimulation, system, configs, resetting, configReady, configError, configWarning, syncError, reset, reconnect, productionStatus, productionReason } = useSystem();
+  const savedAlarm = !simulationStarted && (productionStatus === 'JAMMED' || productionStatus === 'BLOQUEADO');
   const status = resetting ? 'RESET EM ANDAMENTO'
+    : savedAlarm ? `BLOQUEIO SALVO: ${productionStatus} - EXECUTE O RESET`
     : system.phase === 'jammed' ? `ESTEIRA TRAVADA — TEMPO PARADO: ${system.downtimeSeconds}s`
     : system.phase === 'interlocked' ? `EMERGÊNCIA — LINHA BLOQUEADA — ${system.downtimeSeconds}s`
-    : !configReady ? 'SIMULAÇÃO PAUSADA — AGUARDANDO REGULAGENS' : 'System OK';
+    : !configReady ? 'SIMULAÇÃO PAUSADA — AGUARDANDO REGULAGENS' : !simulationStarted ? 'AGUARDANDO COMANDO DO OPERADOR' : 'SIMULAÇÃO EM OPERAÇÃO';
   return <>
     <header><div className="ihm-container">
       <div className="ihm-header-alinhado">
         <div><h1>LINHA DE EMBALAGEM BL EXPORT</h1><p className="subtitle">Sistema de Integridade do Desviador de Alta Velocidade</p><p className="subtitle">{operator ? 'Simulação operacional' : 'Acompanhamento da produção — reset autorizado'}</p></div>
         <Link className="btn-setup-geral" href="/regulagem" aria-label="Abrir central de regulagem">⚙️</Link>
+        {operator && <button className="btn-reset" disabled={simulationStarted || resetting || !configReady || system.phase !== 'running' || productionStatus !== 'OPERACIONAL'} onClick={beginSimulation}>{simulationStarted ? 'Simulação iniciada' : 'Iniciar simulação'}</button>}
         <button className="btn-reset" disabled={resetting || !canReset(session)} onClick={() => {
           if (window.confirm('Deseja realmente resetar os estados e alertas do painel? As contagens serão preservadas.')) void reset();
         }}>{resetting ? 'Resetando…' : '🔄 Reset'}</button>
       </div>
       <SessionActions />
-      <div className={`system-status ${!operator ? productionStatus === 'OPERACIONAL' ? 'status-running' : productionStatus === 'JAMMED' ? 'status-jammed' : productionStatus === 'BLOQUEADO' ? 'status-stopped' : 'status-pending' : resetting || !configReady ? 'status-pending' : system.phase === 'running' ? 'status-running' : system.phase === 'jammed' ? 'status-jammed' : 'status-stopped'}`} role="status">{operator ? status : `${resetting ? 'RESET EM ANDAMENTO — ' : ''}ÚLTIMO STATUS SALVO: ${productionStatus ?? 'AGUARDANDO DADOS'}`}</div>
+      <div className={`system-status ${!operator ? productionStatus === 'OPERACIONAL' ? 'status-running' : productionStatus === 'JAMMED' ? 'status-jammed' : productionStatus === 'BLOQUEADO' ? 'status-stopped' : 'status-pending' : savedAlarm ? 'status-stopped' : resetting || !configReady ? 'status-pending' : system.phase === 'running' ? simulationStarted ? 'status-running' : 'status-ready' : system.phase === 'jammed' ? 'status-jammed' : 'status-stopped'}`} role="status">{operator ? status : `${resetting ? 'RESET EM ANDAMENTO — ' : ''}ÚLTIMO STATUS SALVO: ${productionStatus ?? 'AGUARDANDO DADOS'}`}</div>
       {!operator && <p className="subtitle">Você pode executar o reset. Contagens e pesos individuais não são armazenados pelo sistema atual. Regulagens e simulação continuam exclusivas do ADMIN.</p>}
+      {operator && !simulationStarted && <p className="subtitle">A simulação aguarda seu comando. Se houver um bloqueio salvo, execute o reset antes de iniciar.</p>}
       {system.stop && <p role="alert">{system.stop.reason}</p>}
       {!operator && productionStatus !== 'OPERACIONAL' && productionReason && <p className="notice-error" role="alert">{productionReason}</p>}
       {configError && <p className="notice-error" role="alert">{configError} <button onClick={reconnect}>Tentar novamente</button></p>}
