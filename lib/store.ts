@@ -113,7 +113,7 @@ export class SystemStore {
     }
   };
   saveConfig = async (id: BinId, config: BinConfig) => {
-    if (!this.canOperate()) throw new Error('Regulagem permitida apenas para ADMIN.');
+    if (!this.canOperate()) throw new Error('Regulagem permitida apenas para OPERADOR.');
     await this.repo.saveConfig(id, config);
     this.update({ configs: { ...this.state.configs, [id]: config } });
   };

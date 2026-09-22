@@ -248,7 +248,7 @@ test('a new server alarm received during reset is not overwritten by the reset a
   } finally { store.stop(); }
 });
 
-test('remote operator reset resumes the admin simulator and clears its weight-error window', () => {
+test('remote operator reset resumes the active simulator and clears its weight-error window', () => {
   let receive: (status: string, token?: string) => void = () => {};
   const fake = fakeRepository();
   fake.repo.watchProduction = next => { receive = next; next('OPERACIONAL', 'old-reset'); return () => {}; };

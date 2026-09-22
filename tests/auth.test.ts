@@ -38,7 +38,7 @@ test('authentication is known before profile reads; profile is confirmed before 
   assert.equal(harness.profiles.length, 1);
   assert.equal(controller.getSnapshot().status, 'authorizing');
   assert.equal(canRead(controller.getSnapshot()), false);
-  harness.profiles[0].next({ role: 'ADMIN', active: true });
+  harness.profiles[0].next({ role: 'OPERADOR', active: true });
   assert.equal(canOperate(controller.getSnapshot()), true);
   controller.stop();
 });
@@ -58,8 +58,8 @@ test('profile changes revoke privileges; callbacks from previous users cannot gr
   const harness = sessionHarness();
   harness.controller.start();
   harness.auth({ uid: 'alice', email: null });
-  harness.profiles[0].next({ role: 'ADMIN', active: true });
   harness.profiles[0].next({ role: 'OPERADOR', active: true });
+  harness.profiles[0].next({ role: 'ADMIN', active: true });
   assert.equal(canOperate(harness.controller.getSnapshot()), false);
   assert.equal(canRead(harness.controller.getSnapshot()), true);
   harness.auth({ uid: 'bob', email: null });
@@ -88,7 +88,7 @@ test('profile failure denies access and logout suspends capabilities immediately
   harness.controller.stop();
 });
 
-test('repository checks deny operational reads before authorization and writes by operators', async () => {
+test('repository checks deny operational reads before authorization and writes by administrators', async () => {
   let reads = 0;
   let writes = 0;
   const repo: Repository = {
@@ -100,55 +100,55 @@ test('repository checks deny operational reads before authorization and writes b
   const protectedRepo = authorizedRepository(repo, () => session);
   assert.throws(() => protectedRepo.watchConfigs(() => {}, () => {}), /não autorizada/);
   assert.equal(reads, 0);
-  session = operator;
+  session = admin;
   protectedRepo.watchConfigs(() => {}, () => {});
   assert.equal(reads, 1);
   await assert.rejects(protectedRepo.persist(initialSystem(), false), /não autorizada/);
   await assert.rejects(protectedRepo.saveConfig('BL_06_L', { pesoAlvo: 170, toleranciaPorcentagem: 0 }), /não autorizada/);
   assert.equal(writes, 0);
-  session = admin;
+  session = operator;
   await protectedRepo.persist(initialSystem(), true);
   await protectedRepo.saveConfig('BL_06_L', { pesoAlvo: 170, toleranciaPorcentagem: 0 });
   assert.equal(writes, 2);
   session = { ...admin, status: 'signed-out', user: null };
   await assert.rejects(protectedRepo.persist(initialSystem(), true));
   assert.equal(writes, 2);
-  session = { ...admin, user: { uid: 'another-admin', email: null } };
+  session = { ...operator, user: { uid: 'another-operator', email: null } };
   await assert.rejects(protectedRepo.persist(initialSystem(), true), /sessão original/);
   assert.equal(writes, 2);
 });
 
-test('operator can reset but cannot simulate or change settings', async () => {
+test('administrator cannot reset, simulate or change settings', async () => {
   let writes = 0;
   const repo: Repository = {
     watchConfigs(next) { next({ configs: {}, unknownIds: [], invalidIds: [] }); return () => {}; },
     watchProduction(next) { next('OPERACIONAL'); return () => {}; },
     async saveConfig() { writes++; }, async persist() { writes++; },
   };
-  const store = new SystemStore(repo, () => false, () => true);
+  const store = new SystemStore(repo, () => canOperate(admin), () => canOperate(admin));
   store.start();
   store.tick({ weight: 170, side: 'L', jam: true, failure: false, eventId: 'no-write', now: 1000 });
   await store.reset();
   await assert.rejects(store.saveConfig('BL_06_L', { pesoAlvo: 170, toleranciaPorcentagem: 0 }));
-  assert.equal(writes, 1);
+  assert.equal(writes, 0);
   assert.equal(store.getSnapshot().system.phase, 'running');
   assert.equal(store.getSnapshot().productionStatus, 'OPERACIONAL');
   store.stop();
 });
 
-test('reset authorization requires the original active session without granting general writes', async () => {
+test('operational writes require the original active operator session', async () => {
   let writes = 0;
   const repo: Repository = { watchConfigs() { return () => {}; }, async saveConfig() {}, async persist() { writes++; } };
   let session: Session = operator;
   const secured = authorizedRepository(repo, () => session);
   await secured.persist(initialSystem(), true);
   assert.equal(writes, 1);
-  await assert.rejects(secured.persist(initialSystem(), false));
+  await secured.persist(initialSystem(), false);
   session = { ...operator, status: 'denied' };
   await assert.rejects(secured.persist(initialSystem(), true));
   session = { ...operator, user: { uid: 'replacement', email: null } };
   await assert.rejects(secured.persist(initialSystem(), true));
-  assert.equal(writes, 1);
+  assert.equal(writes, 2);
 });
 
 test('environment validation reveals missing variable names only; storage is optional', () => {

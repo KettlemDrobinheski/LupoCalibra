@@ -11,7 +11,7 @@ import { SessionActions } from './session-actions';
 
 function RegulationForm({ bin, config, individual }: { bin: BinDefinition; config: BinConfig; individual: boolean }) {
   const { session } = useAuth();
-  const admin = canOperate(session);
+  const operator = canOperate(session);
   const { saveConfig } = useSystem();
   const router = useRouter();
   const [weight, setWeight] = useState(String(config.pesoAlvo));
@@ -23,7 +23,7 @@ function RegulationForm({ bin, config, individual }: { bin: BinDefinition; confi
   const range = weightRange(bin, parsed);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (saving || !admin) return;
+    if (saving || !operator) return;
     if (!valid) { setMessage('Informe peso positivo e tolerância entre 0 e 100%.'); return; }
     setSaving(true);
     setMessage('');
@@ -35,14 +35,14 @@ function RegulationForm({ bin, config, individual }: { bin: BinDefinition; confi
     finally { setSaving(false); }
   }
   return <form onSubmit={submit}>
-    <fieldset disabled={saving || !admin}>
+    <fieldset disabled={saving || !operator}>
       <div className="setup-campo"><label htmlFor="pesoAlvo">Peso Alvo da Peça (g):</label><input id="pesoAlvo" className="ihm-input" type="number" step="any" min="0.001" required value={weight} onChange={event => setWeight(event.target.value)} /></div>
       <div className="setup-campo"><label htmlFor="tolerancia">Tolerância Aceitável (%):</label><input id="tolerancia" className="ihm-input" type="number" step="any" min="0" max="100" required value={tolerance} onChange={event => setTolerance(event.target.value)} /></div>
       {valid && <p className="setup-subtitulo">Faixa resultante: {range.min.toFixed(2)}g – {range.max.toFixed(2)}g</p>}
-      {admin && <button className="ihm-botao btn-bloco" type="submit">{saving ? 'Salvando na nuvem…' : '⚡ Aplicar e Salvar na Nuvem'}</button>}
+      {operator && <button className="ihm-botao btn-bloco" type="submit">{saving ? 'Salvando na nuvem…' : '⚡ Aplicar e Salvar na Nuvem'}</button>}
     </fieldset>
     {message && <p role="status">{message}</p>}
-    {!admin && <p role="status">Somente leitura. Alterações de regulagem são permitidas apenas para ADMIN.</p>}
+    {!operator && <p role="status">Somente leitura. Alterações de regulagem são permitidas apenas para OPERADOR.</p>}
   </form>;
 }
 

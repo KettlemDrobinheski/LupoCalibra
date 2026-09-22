@@ -54,8 +54,8 @@ test('a user may read only their own access document and no client can grant rol
   }
 });
 
-test('operators cannot regulate, write partial resets, simulate stops or alter history', async () => {
-  const db = database('operator');
+test('administrators cannot regulate, reset, simulate stops or alter history', async () => {
+  const db = database('admin');
   await assertSucceeds(getDocs(collection(db, 'configuracoes_cubas')));
   await assertSucceeds(getDoc(doc(db, 'producao_diaria', 'linha_export')));
   await assertSucceeds(getDoc(doc(db, 'estado_sistema', 'geral')));
@@ -120,22 +120,20 @@ test('operator reset rejects forged actors, stale markers, extra fields and inva
   }
 });
 
-test('admin can save all 16 canonical BLs, preserve legacy fields and perform the actual reset batch', async () => {
-  const db = database('admin');
+test('operator can save all 16 canonical BLs, preserve legacy fields and perform the actual reset batch', async () => {
+  const db = database('operator');
   for (const code of ['06', '07', '08', '09', '10', '11', '12', '200UP']) for (const side of ['L', 'R']) {
     await assertSucceeds(setDoc(doc(db, 'configuracoes_cubas', `BL_${code}_${side}`), config, { merge: true }));
   }
   assert.equal((await getDoc(doc(db, 'configuracoes_cubas', 'BL_06_L'))).data().campoLegado, 'preservar');
   await assertSucceeds(setDoc(doc(db, 'historico_paradas', 'reset-event'), stop()));
-  const batch = writeBatch(db);
-  batch.set(doc(db, 'producao_diaria', 'linha_export'), production(), { merge: true });
-  batch.set(doc(db, 'estado_sistema', 'geral'), reset, { merge: true });
+  const batch = operatorResetBatch(db);
   batch.set(doc(db, 'historico_paradas', 'reset-event'), { ...stop(), duracao_segundos: 12 }, { merge: true });
   await assertSucceeds(batch.commit());
 });
 
-test('even admin cannot delete, alter unknown fields/IDs, corrupt values or rewrite historical events', async () => {
-  const db = database('admin');
+test('even operator cannot delete, alter unknown fields/IDs, corrupt values or rewrite historical events', async () => {
+  const db = database('operator');
   for (const path of ['configuracoes_cubas/BL_06_L', 'producao_diaria/linha_export', 'estado_sistema/geral', 'historico_paradas/existing']) await assertFails(deleteDoc(doc(db, path)));
   await assertFails(setDoc(doc(db, 'configuracoes_cubas', '1_L'), config));
   await assertFails(setDoc(doc(db, 'configuracoes_cubas', 'BL_99_L'), config));
@@ -156,3 +154,10 @@ test('role deactivation revokes access without trusting a client role', async ()
   await assertFails(getDoc(doc(db, 'estado_sistema', 'geral')));
   await assertFails(setDoc(doc(db, 'estado_sistema', 'geral'), reset));
 });
+
+ test('operator can record a simulated stop but cannot reset production alone', async () => {
+ const db = database('operator');
+ await assertSucceeds(setDoc(doc(db, 'producao_diaria', 'linha_export'), { ...production(), statusGeral: 'BLOQUEADO', systemInterlockActive: true }, { merge: true }));
+ await assertFails(setDoc(doc(db, 'producao_diaria', 'linha_export'), production(), { merge: true }));
+ await assertSucceeds(operatorResetBatch(db).commit());
+ });

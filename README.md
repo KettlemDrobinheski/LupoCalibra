@@ -1,5 +1,18 @@
 ﻿# LupoCalibra
 
+## Etapa atual: opera??o pelo OPERADOR
+
+A primeira etapa da separa??o de responsabilidades transfere simula??o, regulagens,
+registro de paradas e reset para o OPERADOR ativo. O ADMIN mant?m apenas consulta
+operacional nesta etapa; a ?rea de gerenciamento de operadores ainda ser? criada.
+As novas regras de `firestore.rules` precisam ser publicadas junto com esta vers?o.
+
+A simula??o ainda come?a automaticamente ao abrir o painel. Os bot?es Iniciar,
+Parar e Retomar ser?o implementados na pr?xima etapa. Contagens continuam locais
+a cada aba. As descri??es antigas abaixo sobre opera??o pelo ADMIN representam
+a vers?o anterior e ser?o revisadas ao concluir as pr?ximas etapas.
+
+
 Aplicação Next.js App Router e TypeScript na branch `main`, com Firebase
 Authentication com entrada por matrícula/senha e autorização por perfil. A publicação das regras é manual.
 

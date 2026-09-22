@@ -8,9 +8,9 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/acessos/$(request.auth.uid)).data.active == true
         && get(/databases/$(database)/documents/acessos/$(request.auth.uid)).data.role in ['ADMIN', 'OPERADOR'];
     }
-    function admin() {
+    function operator() {
       return authorized()
-        && get(/databases/$(database)/documents/acessos/$(request.auth.uid)).data.role == 'ADMIN';
+        && get(/databases/$(database)/documents/acessos/$(request.auth.uid)).data.role == 'OPERADOR';
     }
     function canonicalBin(id) {
       return id.matches('^BL_(06|07|08|09|10|11|12|200UP)_(L|R)$');
@@ -41,7 +41,7 @@ service cloud.firestore {
     function operatorReset() {
       let production = getAfter(/databases/$(database)/documents/producao_diaria/linha_export).data;
       let reset = getAfter(/databases/$(database)/documents/estado_sistema/geral).data;
-      return authorized()
+      return operator()
         && production.ultimo_registro == request.time
         && production.statusGeral == 'OPERACIONAL'
         && production.motivoParada == ''
@@ -68,36 +68,36 @@ service cloud.firestore {
 
     match /configuracoes_cubas/{id} {
       allow get, list: if authorized();
-      allow create: if admin() && canonicalBin(id) && validConfig()
+      allow create: if operator() && canonicalBin(id) && validConfig()
         && request.resource.data.keys().hasOnly(['pesoAlvo', 'toleranciaPorcentagem', 'ultimaAtualizacao']);
-      allow update: if admin() && canonicalBin(id) && validConfig()
+      allow update: if operator() && canonicalBin(id) && validConfig()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pesoAlvo', 'toleranciaPorcentagem', 'ultimaAtualizacao']);
       allow delete: if false;
     }
 
     match /producao_diaria/linha_export {
       allow get: if authorized();
-      allow create: if (admin() || operatorReset()) && validProduction()
+      allow create: if operator() && (operatorReset() || request.resource.data.statusGeral != 'OPERACIONAL') && validProduction()
         && request.resource.data.keys().hasOnly(['ultimo_registro', 'systemInterlockActive', 'machineJamActive', 'statusGeral', 'resetToken', 'motivoParada']);
-      allow update: if (admin() || operatorReset()) && validProduction()
+      allow update: if operator() && (operatorReset() || (request.resource.data.statusGeral != 'OPERACIONAL' && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['resetToken']))) && validProduction()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ultimo_registro', 'systemInterlockActive', 'machineJamActive', 'statusGeral', 'resetToken', 'motivoParada']);
       allow delete: if false;
     }
 
     match /estado_sistema/geral {
       allow get: if authorized();
-      allow create: if (admin() || operatorReset()) && validReset()
+      allow create: if operatorReset() && validReset()
         && request.resource.data.keys().hasOnly(['alertaAtivo', 'tempoEsteiraTravada', 'ultimaLimpeza', 'resetToken', 'resetEm', 'resetPor']);
-      allow update: if (admin() || operatorReset()) && validReset()
+      allow update: if operatorReset() && validReset()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['alertaAtivo', 'tempoEsteiraTravada', 'ultimaLimpeza', 'resetToken', 'resetEm', 'resetPor']);
       allow delete: if false;
     }
 
     match /historico_paradas/{id} {
-      allow get, list: if admin();
-      allow create: if admin() && validStop()
+      allow get, list: if operator();
+      allow create: if operator() && validStop()
         && request.resource.data.keys().hasOnly(['horario', 'tipo', 'motivo', 'duracao_segundos']);
-      allow update: if admin() && validStop()
+      allow update: if operator() && validStop()
         && request.resource.data.duracao_segundos >= resource.data.duracao_segundos
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['duracao_segundos']);
       allow delete: if false;

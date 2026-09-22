@@ -18,11 +18,11 @@ export function canRead(session: Session) {
 }
 
 export function canOperate(session: Session) {
-  return canRead(session) && session.role === 'ADMIN';
+  return canRead(session) && session.role === 'OPERADOR';
 }
 
 export function canReset(session: Session) {
-  return canRead(session);
+  return canOperate(session);
 }
 
 export function requireAccess(session: Session, write = false) {
