@@ -1,6 +1,6 @@
 ﻿# LupoCalibra
 
-Migração para Next.js App Router e TypeScript na branch `next-migration`, com Firebase
+Aplicação Next.js App Router e TypeScript na branch `main`, com Firebase
 Authentication com entrada por matrícula/senha e autorização por perfil. A publicação das regras é manual.
 
 O cadastro inicial por matrícula está descrito em [LOGIN-MATRICULA.md](docs/LOGIN-MATRICULA.md).
@@ -43,7 +43,24 @@ Perfis são administrados manualmente pelo Console/IAM. Gerenciamento de operado
 pela aplicação fica para uma etapa futura. Login inválido, carregamento, falta de
 permissão e logout têm estados próprios. Não existe cadastro público no aplicativo.
 
-## Variáveis públicas e Vercel futura
+## Publicação no GitHub Pages
+
+Site: [LupoCalibra](https://kettlemdrobinheski.github.io/LupoCalibra/).
+
+O workflow `.github/workflows/pages.yml` compila e publica a aplicação a cada push
+na `main`. O Pages deve usar a origem **GitHub Actions**, pois a publicação direta
+da raiz da branch exibiria o `index.html` legado, sem o login novo.
+
+No build de publicação, `GITHUB_PAGES=true` ativa a exportação estática em `out/`,
+o prefixo `/LupoCalibra` e as páginas com barra final. O desenvolvimento local
+continua usando os caminhos originais, sem esse prefixo.
+
+As variáveis Firebase abaixo devem existir em **Settings → Secrets and variables →
+Actions → Variables** do repositório. Somente a configuração pública do SDK Web
+é usada; `.env.local` não é enviado. Para acessar o painel publicado, é necessária
+uma conta com perfil ativo. A publicação não cria contas nem libera acesso anônimo.
+
+## Variáveis públicas
 
 | Variável | Uso |
 | --- | --- |
@@ -145,4 +162,4 @@ Somente a configuração pública Firebase aparece nos legados/histórico e no a
 
 Pendências: publicação das regras atualizadas de reset e homologação da operação real,
 revisão visual no navegador e confirmação dos IDs legados. A aplicação continua sendo
-uma simulação, sem integração com balanças/PLC. Nenhum commit, push, merge ou deploy foi feito.
+uma simulação, sem integração com balanças/PLC.
