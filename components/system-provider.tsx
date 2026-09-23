@@ -20,5 +20,5 @@ export function useSystem() {
   const store = useContext(Context);
   if (!store) throw new Error('SystemProvider ausente.');
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
-  return { ...snapshot, beginSimulation: store.beginSimulation, reset: store.reset, saveConfig: store.saveConfig, reconnect: store.start };
+  return { ...snapshot, beginSimulation: store.beginSimulation, pauseSimulation: store.pauseSimulation, reset: store.reset, saveConfig: store.saveConfig, reconnect: store.start };
 }

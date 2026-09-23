@@ -8,6 +8,7 @@ export type Snapshot = {
   productionStatus: string | null;
   productionReason: string;
   simulationStarted: boolean;
+  simulationPaused: boolean;
 };
 
 export class SystemStore {
@@ -16,6 +17,7 @@ export class SystemStore {
     configError: '', configWarning: '', syncError: '', resetting: false,
     productionStatus: null, productionReason: '',
     simulationStarted: false,
+    simulationPaused: false,
   };
   private listeners = new Set<() => void>();
   private timer: ReturnType<typeof setInterval> | undefined;
@@ -74,7 +76,7 @@ export class SystemStore {
     return this.stop;
   };
   stop = () => {
-    this.update({ simulationStarted: false });
+    this.update({ simulationStarted: false, simulationPaused: false });
     if (this.timer !== undefined) clearInterval(this.timer);
     this.timer = undefined;
     this.unsubscribe?.();
@@ -100,7 +102,12 @@ export class SystemStore {
     if (!this.canOperate() || this.state.simulationStarted || this.state.resetting
       || !this.state.configReady || !this.productionReady || this.state.system.phase !== 'running'
       || (this.repo.watchProduction && this.state.productionStatus !== 'OPERACIONAL')) return;
-    this.update({ simulationStarted: true });
+    this.update({ simulationStarted: true, simulationPaused: false });
+  };
+  pauseSimulation = () => {
+    if (!this.canOperate() || !this.state.simulationStarted || this.state.resetting
+      || this.state.system.phase !== 'running') return;
+    this.update({ simulationStarted: false, simulationPaused: true });
   };
   private enqueue(write: () => Promise<void>) {
     const result = this.writes.then(write);

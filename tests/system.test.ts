@@ -124,6 +124,54 @@ function fakeRepository() {
   return { repo, writes, receive: (result: ConfigurationResult) => receive(result), fail: (error: Error) => fail(error), unsubscribed: () => unsubscriptions };
 }
 
+test('manual pause preserves weights, counts, settings and recent failures until resume', () => {
+  const fake = fakeRepository();
+  const store = new SystemStore(fake.repo);
+  store.start();
+  try {
+    store.beginSimulation();
+    store.tick(piece);
+    for (let i = 0; i < 4; i++) store.tick({ ...piece, weight: 190, binId: 'BL_06_L' });
+    const before = store.getSnapshot();
+    store.pauseSimulation();
+    store.pauseSimulation();
+    store.tick(piece);
+    assert.equal(store.getSnapshot().simulationPaused, true);
+    assert.equal(store.getSnapshot().simulationStarted, false);
+    assert.equal(store.getSnapshot().system, before.system);
+    assert.equal(store.getSnapshot().configs, before.configs);
+    assert.deepEqual(fake.writes, []);
+    store.beginSimulation();
+    assert.equal(store.getSnapshot().simulationPaused, false);
+    store.tick({ ...piece, weight: 190, binId: 'BL_06_L', now: 2000 });
+    assert.equal(store.getSnapshot().system.phase, 'interlocked');
+    assert.equal(store.getSnapshot().system.bins.BL_06_L.totalProcessed, 1);
+    store.pauseSimulation();
+    assert.equal(store.getSnapshot().simulationPaused, false);
+    assert.equal(store.getSnapshot().system.phase, 'interlocked');
+  } finally { store.stop(); }
+});
+
+test('manual pause requires an active operator and resume expires failures older than two minutes', () => {
+  const fake = fakeRepository();
+  let operator = true;
+  const store = new SystemStore(fake.repo, () => operator);
+  store.start();
+  try {
+    store.beginSimulation();
+    store.tick({ ...piece, weight: 190, binId: 'BL_06_L' });
+    operator = false;
+    store.pauseSimulation();
+    assert.equal(store.getSnapshot().simulationStarted, true);
+    operator = true;
+    store.pauseSimulation();
+    store.beginSimulation();
+    store.tick({ ...piece, now: piece.now + ERROR_WINDOW_MS + 1 });
+    assert.equal(store.getSnapshot().system.bins.BL_06_L.errors, 0);
+    assert.equal(store.getSnapshot().system.bins.BL_06_L.totalProcessed, 1);
+  } finally { store.stop(); }
+});
+
 test('simulation waits for an explicit operator command and repeated starts preserve counts', () => {
   const fake = fakeRepository();
   const store = new SystemStore(fake.repo);

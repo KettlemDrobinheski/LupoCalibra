@@ -14,19 +14,21 @@ const formatWeight = (weight: number) => `${Number(weight.toFixed(2))}g`;
 export default function Dashboard() {
   const { session } = useAuth();
   const operator = canOperate(session);
-  const { simulationStarted, beginSimulation, system, configs, resetting, configReady, configError, configWarning, syncError, reset, reconnect, productionStatus, productionReason } = useSystem();
+  const { simulationStarted, simulationPaused, beginSimulation, pauseSimulation, system, configs, resetting, configReady, configError, configWarning, syncError, reset, reconnect, productionStatus, productionReason } = useSystem();
   const savedAlarm = !simulationStarted && (productionStatus === 'JAMMED' || productionStatus === 'BLOQUEADO');
   const status = resetting ? 'RESET EM ANDAMENTO'
     : savedAlarm ? `BLOQUEIO SALVO: ${productionStatus} - EXECUTE O RESET`
     : system.phase === 'jammed' ? `ESTEIRA TRAVADA — TEMPO PARADO: ${system.downtimeSeconds}s`
     : system.phase === 'interlocked' ? `EMERGÊNCIA — LINHA BLOQUEADA — ${system.downtimeSeconds}s`
+    : simulationPaused ? 'SIMULAÇÃO PAUSADA PELO OPERADOR'
     : !configReady ? 'SIMULAÇÃO PAUSADA — AGUARDANDO REGULAGENS' : !simulationStarted ? 'AGUARDANDO COMANDO DO OPERADOR' : 'SIMULAÇÃO EM OPERAÇÃO';
   return <>
     <header><div className="ihm-container">
       <div className="ihm-header-alinhado">
         <div><h1>LINHA DE EMBALAGEM BL EXPORT</h1><p className="subtitle">Sistema de Integridade do Desviador de Alta Velocidade</p><p className="subtitle">{operator ? 'Simulação operacional' : 'Acompanhamento da produção — reset autorizado'}</p></div>
         <Link className="btn-setup-geral" href="/regulagem" aria-label="Abrir central de regulagem">⚙️</Link>
-        {operator && <button className="btn-reset" disabled={simulationStarted || resetting || !configReady || system.phase !== 'running' || productionStatus !== 'OPERACIONAL'} onClick={beginSimulation}>{simulationStarted ? 'Simulação iniciada' : 'Iniciar simulação'}</button>}
+        {operator && <button className="btn-reset" disabled={simulationStarted || resetting || !configReady || system.phase !== 'running' || productionStatus !== 'OPERACIONAL'} onClick={beginSimulation}>{simulationStarted ? 'Simulação iniciada' : simulationPaused ? 'Retomar simulação' : 'Iniciar simulação'}</button>}
+        {operator && <button className="btn-reset" disabled={!simulationStarted || resetting || system.phase !== 'running'} onClick={pauseSimulation}>Parar</button>}
         <button className="btn-reset" disabled={resetting || !canReset(session)} onClick={() => {
           if (window.confirm('Deseja realmente resetar os estados e alertas do painel? As contagens serão preservadas.')) void reset();
         }}>{resetting ? 'Resetando…' : '🔄 Reset'}</button>
