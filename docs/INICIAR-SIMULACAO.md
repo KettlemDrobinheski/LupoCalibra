@@ -5,19 +5,22 @@ simulação**. A espera aparece em amarelo. Após o comando, a simulação apare
 verde. O botão exige OPERADOR ativo, regulagens válidas carregadas e status salvo
 OPERACIONAL. Um bloqueio salvo exige reset antes de iniciar.
 
-O comando é local à aba e não grava um novo estado de operação no Firebase nesta
-etapa. Contagens continuam locais. Recarregar a página exige iniciar novamente.
+O início reserva no Firestore a autorização para uma aba. A autorização dura 30
+segundos e a aba tenta renová-la a cada 10 segundos. As contagens ficam na aba.
+Recarregar a página exige iniciar novamente e aguardar a liberação ou expiração
+da autorização anterior, se ainda estiver ativa.
 
 O botão **Parar** pausa a geração de peças nesta aba, preservando pesos, contagens,
 regulagens e falhas recentes. O botão de início passa a **Retomar simulação**.
 Pausar não limpa um bloqueio e não substitui o reset. A janela de falhas continua
 usando o tempo decorrido: falhas com mais de dois minutos expiram ao retomar.
-A pausa não é gravada no Firebase nem interrompe outras abas nesta etapa.
+A pausa libera a autorização, permitindo que outra aba inicie a simulação.
 
-O reset de uma simulação
-já iniciada ainda mantém o comportamento anterior de retomada automática.
+Bloqueios confirmados, perda de confirmação da conexão e expiração da autorização
+interrompem a geração de peças. O reset confirmado libera a autorização anterior.
+Para voltar a gerar peças, clique novamente em **Iniciar simulação** ou **Retomar
+simulação**.
 
 Esta etapa substitui a descrição anterior de início automático no README.
 
-Validação: testes da aplicação, lint e build estático. Não houve publicação das
-alterações nem mudança nas regras Firestore nesta etapa.
+Este fluxo exige as regras do Firestore correspondentes à versão do painel.

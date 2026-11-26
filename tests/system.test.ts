@@ -345,7 +345,7 @@ test('a new server alarm received during reset is not overwritten by the reset a
   } finally { store.stop(); }
 });
 
-test('remote operator reset resumes the active simulator and clears its weight-error window', () => {
+test('remote operator reset clears its weight-error window and requires a new start', () => {
   let receive: (status: string, token?: string) => void = () => {};
   const fake = fakeRepository();
   fake.repo.watchProduction = next => { receive = next; next('OPERACIONAL', 'old-reset'); return () => {}; };
@@ -360,5 +360,94 @@ test('remote operator reset resumes the active simulator and clears its weight-e
     assert.equal(store.getSnapshot().system.phase, 'running');
     assert.equal(store.getSnapshot().system.bins.BL_06_L.errors, 0);
     assert.equal(store.getSnapshot().system.bins.BL_06_L.totalProcessed, 1);
+    assert.equal(store.getSnapshot().simulationStarted, false);
+  } finally { store.stop(); }
+});
+
+test('confirmed remote alarm and lost connection stop ticks; recovery requires a new authorization', async () => {
+  const fake = fakeRepository();
+  let receive: NonNullable<Parameters<NonNullable<Repository['watchProduction']>>[0]> = () => {};
+  let fail: (error: Error) => void = () => {};
+  const acquisitions: string[] = [];
+  fake.repo.watchProduction = (next, error) => {
+    receive = next;
+    fail = error;
+    next('OPERACIONAL', undefined, undefined, { revision: '1', leaseId: null });
+    return () => {};
+  };
+  fake.repo.changeLease = async (action, id) => {
+    if (action === 'acquire') acquisitions.push(id);
+  };
+  const store = new SystemStore(fake.repo);
+  store.start();
+  try {
+    await store.beginSimulation();
+    store.tick(piece);
+    fail(new Error('offline'));
+    store.tick(piece);
+    assert.equal(store.getSnapshot().simulationStarted, false);
+    assert.equal(store.getSnapshot().productionReady, false);
+    receive('OPERACIONAL', undefined, undefined, { revision: '1', leaseId: null });
+    store.tick(piece);
+    await store.beginSimulation();
+    assert.equal(new Set(acquisitions).size, 2);
+    store.tick(piece);
+    receive('BLOQUEADO', undefined, 'Bloqueio remoto', { revision: '2', leaseId: null });
+    store.tick(piece);
+    assert.equal(store.getSnapshot().simulationStarted, false);
+    assert.equal(store.getSnapshot().productionReason, 'Bloqueio remoto');
+    assert.equal(store.getSnapshot().system.bins.BL_06_L.totalProcessed, 2);
+    assert.deepEqual(fake.writes, []);
+  } finally { store.stop(); }
+});
+
+test('late acquisition confirmation cannot resume after a remote alarm', async () => {
+  const fake = fakeRepository();
+  let alarm = () => {};
+  let finish = () => {};
+  let released = '';
+  fake.repo.watchProduction = next => {
+    next('OPERACIONAL', undefined, undefined, { revision: '1', leaseId: null });
+    alarm = () => next('JAMMED', undefined, 'Remoto', { revision: '2', leaseId: null });
+    return () => {};
+  };
+  fake.repo.changeLease = (action, id) => {
+    if (action === 'acquire') return new Promise<void>(resolve => { finish = resolve; });
+    released = id;
+    return Promise.resolve();
+  };
+  const store = new SystemStore(fake.repo);
+  store.start();
+  try {
+    const pending = store.beginSimulation();
+    await Promise.resolve();
+    alarm();
+    finish();
+    await pending;
+    store.tick(piece);
+    assert.equal(store.getSnapshot().simulationStarted, false);
+    assert.equal(store.getSnapshot().system.bins.BL_06_L.totalProcessed, 0);
+    assert.ok(released);
+  } finally { store.stop(); }
+});
+
+test('a tab stops processing before its authorization can expire on the server', async t => {
+  const fake = fakeRepository();
+  fake.repo.watchProduction = next => {
+    next('OPERACIONAL', undefined, undefined, { revision: '1', leaseId: null });
+    return () => {};
+  };
+  fake.repo.changeLease = async () => {};
+  const clock = t.mock.method(Date, 'now', () => 1_000);
+  const store = new SystemStore(fake.repo);
+  store.start();
+  try {
+    await store.beginSimulation();
+    store.tick(piece);
+    clock.mock.mockImplementation(() => 31_000);
+    store.tick(piece);
+    assert.equal(store.getSnapshot().simulationStarted, false);
+    assert.equal(store.getSnapshot().system.bins.BL_06_L.totalProcessed, 1);
+    assert.match(store.getSnapshot().syncError, /expirada/);
   } finally { store.stop(); }
 });

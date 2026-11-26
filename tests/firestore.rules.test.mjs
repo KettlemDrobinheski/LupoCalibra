@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { after, before, test } from 'node:test';
 import { initializeTestEnvironment, assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
-import { collection, deleteDoc, doc, getDoc, getDocs, serverTimestamp, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDoc, getDocs, runTransaction, serverTimestamp, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
 
 const address = process.env.FIRESTORE_EMULATOR_HOST;
 if (!address || !/^(127\.0\.0\.1|localhost):\d+$/.test(address)) {
@@ -16,13 +16,25 @@ const production = () => ({ ultimo_registro: serverTimestamp(), systemInterlockA
 const reset = { alertaAtivo: false, tempoEsteiraTravada: 0, ultimaLimpeza: 'teste' };
 const stop = () => ({ horario: new Date(1000), tipo: 'JAM', motivo: 'Teste local', duracao_segundos: 0 });
 const database = uid => uid ? environment.authenticatedContext(uid).firestore() : environment.unauthenticatedContext().firestore();
+const line = db => doc(db, 'producao_diaria', 'linha_export');
+const acquire = (db, id, uid = 'operator') => runTransaction(db, async transaction => {
+  await transaction.get(line(db));
+  transaction.update(line(db), { lease: { id, uid, renewedAt: serverTimestamp() } });
+});
+function stopBatch(db, leaseId, id = randomUUID()) {
+  const batch = writeBatch(db);
+  batch.update(line(db), { ...production(), statusGeral: 'JAMMED', machineJamActive: true,
+    motivoParada: stop().motivo, stopId: id, lease: null });
+  batch.set(doc(db, 'historico_paradas', id), { ...stop(), leaseId });
+  return batch;
+}
 
 before(async () => {
   environment = await initializeTestEnvironment({ projectId: 'demo-lupocalibra-tests', firestore: { host, port: Number(port), rules: readFileSync('firestore.rules', 'utf8') } });
   await environment.clearFirestore();
   await environment.withSecurityRulesDisabled(async context => {
     const db = context.firestore();
-    for (const [uid, role, active] of [['admin', 'ADMIN', true], ['operator', 'OPERADOR', true], ['inactive', 'ADMIN', false], ['bad-role', 'admin', true]]) {
+    for (const [uid, role, active] of [['admin', 'ADMIN', true], ['operator', 'OPERADOR', true], ['operator2', 'OPERADOR', true], ['inactive', 'ADMIN', false], ['bad-role', 'admin', true]]) {
       await setDoc(doc(db, 'acessos', uid), { role, active });
     }
     await setDoc(doc(db, 'configuracoes_cubas', 'BL_06_L'), { ...config, campoLegado: 'preservar' });
@@ -73,7 +85,7 @@ test('administrators cannot regulate, reset, simulate stops or alter history', a
 function operatorResetBatch(db, resetChanges = {}, productionChanges = {}) {
   const resetToken = randomUUID();
   const batch = writeBatch(db);
-  batch.set(doc(db, 'producao_diaria', 'linha_export'), { ...production(), resetToken, ...productionChanges }, { merge: true });
+  batch.set(doc(db, 'producao_diaria', 'linha_export'), { ...production(), resetToken, lease: null, stopId: null, ...productionChanges }, { merge: true });
   batch.set(doc(db, 'estado_sistema', 'geral'), {
     ...reset, resetToken, resetEm: serverTimestamp(), resetPor: 'operator', ...resetChanges,
   }, { merge: true });
@@ -126,10 +138,14 @@ test('operator can save all 16 canonical BLs, preserve legacy fields and perform
     await assertSucceeds(setDoc(doc(db, 'configuracoes_cubas', `BL_${code}_${side}`), config, { merge: true }));
   }
   assert.equal((await getDoc(doc(db, 'configuracoes_cubas', 'BL_06_L'))).data().campoLegado, 'preservar');
-  await assertSucceeds(setDoc(doc(db, 'historico_paradas', 'reset-event'), stop()));
+  const lease = randomUUID();
+  const event = randomUUID();
+  await assertSucceeds(acquire(db, lease));
+  await assertSucceeds(stopBatch(db, lease, event).commit());
   const batch = operatorResetBatch(db);
-  batch.set(doc(db, 'historico_paradas', 'reset-event'), { ...stop(), duracao_segundos: 12 }, { merge: true });
+  batch.update(doc(db, 'historico_paradas', event), { duracao_segundos: 12 });
   await assertSucceeds(batch.commit());
+  assert.equal((await getDoc(doc(db, 'historico_paradas', event))).data().duracao_segundos, 12);
 });
 
 test('even operator cannot delete, alter unknown fields/IDs, corrupt values or rewrite historical events', async () => {
@@ -155,9 +171,42 @@ test('role deactivation revokes access without trusting a client role', async ()
   await assertFails(setDoc(doc(db, 'estado_sistema', 'geral'), reset));
 });
 
- test('operator can record a simulated stop but cannot reset production alone', async () => {
- const db = database('operator');
- await assertSucceeds(setDoc(doc(db, 'producao_diaria', 'linha_export'), { ...production(), statusGeral: 'BLOQUEADO', systemInterlockActive: true }, { merge: true }));
- await assertFails(setDoc(doc(db, 'producao_diaria', 'linha_export'), production(), { merge: true }));
- await assertSucceeds(operatorResetBatch(db).commit());
- });
+test('only one of two concurrent transactions acquires the line, including the same operator UID', async () => {
+  const db = database('operator');
+  for (const uid of ['operator', 'operator2']) {
+    await assertSucceeds(operatorResetBatch(db).commit());
+    const candidates = [randomUUID(), randomUUID()];
+    const outcomes = await Promise.allSettled([acquire(db, candidates[0]), acquire(database(uid), candidates[1], uid)]);
+    assert.equal(outcomes.filter(result => result.status === 'fulfilled').length, 1);
+    const winner = outcomes.findIndex(result => result.status === 'fulfilled');
+    assert.equal((await getDoc(line(db))).data().lease.id, candidates[winner]);
+  }
+});
+
+test('expired authority cannot be renewed and stale stops cannot survive reset or takeover', async () => {
+  const db = database('operator');
+  const stale = randomUUID();
+  await environment.withSecurityRulesDisabled(context => updateDoc(line(context.firestore()), {
+    lease: { id: stale, uid: 'operator', renewedAt: new Date(0) },
+  }));
+  await assertFails(acquire(db, stale));
+  const current = randomUUID();
+  await assertSucceeds(acquire(db, current));
+  const discarded = randomUUID();
+  await assertFails(stopBatch(db, stale, discarded).commit());
+  assert.equal((await getDoc(doc(db, 'historico_paradas', discarded))).exists(), false);
+  await assertFails(updateDoc(line(db), { ...production(), statusGeral: 'JAMMED', machineJamActive: true }));
+  await assertSucceeds(stopBatch(db, current).commit());
+  await assertFails(updateDoc(line(db), production()));
+  await assertSucceeds(operatorResetBatch(db).commit());
+  await assertFails(stopBatch(db, current).commit());
+});
+
+test('operator can initialize a missing or invalid production document', async () => {
+  const db = database('operator');
+  await environment.withSecurityRulesDisabled(context => deleteDoc(line(context.firestore())));
+  await assertSucceeds(operatorResetBatch(db).commit());
+  await environment.withSecurityRulesDisabled(context => setDoc(line(context.firestore()), { campoLegado: 42 }));
+  await assertSucceeds(operatorResetBatch(db).commit());
+  assert.equal((await getDoc(line(db))).data().campoLegado, 42);
+});

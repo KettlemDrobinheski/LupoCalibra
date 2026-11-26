@@ -1,178 +1,88 @@
-﻿# LupoCalibra
+# LupoCalibra
 
-## Etapa atual: opera??o pelo OPERADOR
+O LupoCalibra nasceu da minha experiência em produção industrial. Usei o processo de classificação por peso em uma linha de embalagem como ponto de partida para construir um painel que mostra como regulagens, desvios de peso e bloqueios afetam a operação.
 
-A primeira etapa da separa??o de responsabilidades transfere simula??o, regulagens,
-registro de paradas e reset para o OPERADOR ativo. O ADMIN mant?m apenas consulta
-operacional nesta etapa; a ?rea de gerenciamento de operadores ainda ser? criada.
-As novas regras de `firestore.rules` precisam ser publicadas junto com esta vers?o.
+O projeto é um **protótipo de simulação**, sem integração com balanças, sensores, esteiras ou controladores industriais reais.
 
-A simula??o ainda come?a automaticamente ao abrir o painel. Os bot?es Iniciar,
-Parar e Retomar ser?o implementados na pr?xima etapa. Contagens continuam locais
-a cada aba. As descri??es antigas abaixo sobre opera??o pelo ADMIN representam
-a vers?o anterior e ser?o revisadas ao concluir as pr?ximas etapas.
+## Experimente a demonstração
 
+Na tela de login, clique em **Explorar demonstração**. A demonstração abre sem matrícula ou senha, com dados fictícios independentes em cada aba. Você pode iniciar, pausar, retomar, ajustar as balanças, demonstrar um bloqueio e executar o reset. O estado fica em memória durante a navegação entre o painel e a regulagem. Recarregar a página reinicia a sessão da demo.
 
-Aplicação Next.js App Router e TypeScript na branch `main`, com Firebase
-Authentication com entrada por matrícula/senha e autorização por perfil. A publicação das regras é manual.
+Enquanto a publicação estiver pendente, use a demonstração local em `http://localhost:3000/demo`. O caminho previsto no GitHub Pages é `/LupoCalibra/demo/`, com a central de regulagem em `/LupoCalibra/demo/regulagem/`.
 
-O cadastro inicial por matrícula está descrito em [LOGIN-MATRICULA.md](docs/LOGIN-MATRICULA.md).
-O provedor Firebase continua sendo Email/Password, com identificador interno por matrícula.
-Contas antigas por e-mail precisam ser adaptadas pelo responsável preservando o UID.
+## Como a simulação funciona
 
-## Executar localmente
+- **Vazão.** São 16 cubas, oito por lado. Em operação contínua, cada cuba recebe 120 peças por minuto, totalizando 1.920 na linha. Um agendador distribui as chegadas das peças. A retomada descarta as chegadas do período em que a simulação ficou parada.
+- **Classificação.** Cada peça recebe um peso individual. A faixa de cada balança é definida pelo peso-alvo e pela tolerância percentual. O contador de peças na faixa sobe apenas quando o peso é aprovado.
+- **Faixas padrão.** As classes `BL_06` a `BL_12` cobrem 160–180, 181–200, 201–220, 221–240, 241–260, 261–280 e 281–300 g. A faixa padrão temporária da `BL_200UP` é 301–999 g.
+- **Bloqueio.** Cinco peças fora da faixa na mesma cuba em até dois minutos bloqueiam a linha. Na demo, **Demonstrar bloqueio** injeta essas cinco peças fictícias. No modo autenticado, a chance de desvio é de 2% por oportunidade a cada 342 ms na linha inteira, independente da vazão de cada cuba.
+- **Reset.** Limpa o bloqueio e a janela de falhas, preserva as regulagens e as contagens de peças aprovadas e aguarda um novo comando de início ou retomada.
 
-Ambiente validado: Node 22.23.2 e Yarn **1.22.22**, fixado em `packageManager` e `engines`.
-Preserve `yarn.lock` e utilize um único gerenciador.
+A vazão é nominal e depende da execução regular do temporizador do navegador. Quando o navegador suspende o temporizador, a simulação descarta as chegadas perdidas.
+
+## Modo autenticado
+
+O login usa matrícula e senha pelo Firebase Authentication. O Firestore confirma o perfil ativo em `acessos/{uid}` antes de liberar a área operacional.
+
+| Perfil | Permissão |
+| --- | --- |
+| **OPERADOR** | Iniciar, parar e retomar a simulação, editar regulagens, inicializar a linha e executar o reset. |
+| **ADMIN** | Consultar o status da linha e as regulagens. |
+
+Uma transação no Firestore reserva a linha para uma única sessão, inclusive quando duas abas usam a mesma matrícula. A autorização vence após 30 segundos e a aba ativa tenta renová-la a cada 10 segundos. Bloqueio remoto confirmado, perda de confirmação da conexão ou expiração interrompem a geração.
+
+O Firestore guarda as regulagens, o status compartilhado, os registros de parada e o último reset. Pesos e contagens individuais ficam na aba. A demonstração pública funciona em memória, sem leitura ou gravação no Firebase. [Login por matrícula](docs/LOGIN-MATRICULA.md) · [Fluxo de reset](docs/RESET-OPERADOR.md)
+
+## Tecnologias e aprendizados
+
+| Tecnologia | Uso |
+| --- | --- |
+| Next.js App Router, React e TypeScript | Rotas públicas e protegidas, interface compartilhada e tipos para balanças, amostras e estado da linha. |
+| Firebase Authentication e Cloud Firestore | Identidade, permissões, atualizações em tempo real e transações para coordenar sessões. |
+| Node.js, ESLint e Firebase Emulator Suite | Testes do motor, da concorrência, do login e das regras. |
+| GitHub Actions e GitHub Pages | Build e hospedagem da exportação estática. |
+
+Os principais aprendizados foram separar a regra de classificação da interface, usar o mesmo motor com dados locais ou persistidos, coordenar abas concorrentes com transações e proteger as operações nas regras do Firestore. Testes com relógio controlado permitem conferir um minuto de produção sem a espera real.
+
+## Execute localmente
+
+Use Node.js 22 e Yarn Classic 1.22.22.
 
 ```powershell
 yarn install --frozen-lockfile
-# Se .env.local ainda não existir, copie .env.example e preencha os valores públicos.
+# Se ainda não existir, copie .env.example para .env.local e preencha os valores públicos.
 yarn dev
 ```
 
-Abra `http://localhost:3000/login`. O painel `/` e a regulagem `/regulagem` exigem
-usuário autenticado com perfil ativo. A configuração Firebase local já foi copiada
-com segurança do legado para `.env.local`; esse arquivo está ignorado pelo Git.
+Abra `http://localhost:3000/demo` ou use **Explorar demonstração** em `/login`. As rotas `/` e `/regulagem` exigem uma conta com perfil ativo. [Configuração do Firebase](docs/FIREBASE-SETUP.md)
 
-**Antes do primeiro login, siga [a ativação manual no Firebase](docs/FIREBASE-SETUP.md).**
-A regra temporária expirou em 22/07/2026. O usuário confirmou o login com o perfil
-OPERADOR após a configuração no Console. A nova versão de `firestore.rules` precisa
-ser publicada para liberar o reset ao OPERADOR; regras antigas rejeitam essa operação.
-
-## Autenticação e autorização
-
-A sessão usa `onAuthStateChanged` e persistência por sessão da aba. Só depois de
-conhecer o usuário o aplicativo consulta seu documento `acessos/{uid}`. Só após
-confirmar um perfil ativo no servidor são montados o painel e os listeners operacionais.
-
-- `ADMIN`: leitura, regulagem, reset e simulação com registro de paradas.
-- `OPERADOR`: leitura das regulagens e do último status salvo, com reset autorizado.
-- Conta sem perfil, perfil inativo ou desconhecido: sem acesso operacional.
-- Nenhum usuário do aplicativo, inclusive ADMIN, pode criar/alterar perfis ou excluir documentos.
-
-A interface reflete as permissões; **as regras Firestore aplicam os bloqueios no servidor**.
-Perfis são administrados manualmente pelo Console/IAM. Gerenciamento de operadores
-pela aplicação fica para uma etapa futura. Login inválido, carregamento, falta de
-permissão e logout têm estados próprios. Não existe cadastro público no aplicativo.
-
-## Publicação no GitHub Pages
-
-Site: [LupoCalibra](https://kettlemdrobinheski.github.io/LupoCalibra/).
-
-O workflow `.github/workflows/pages.yml` compila e publica a aplicação a cada push
-na `main`. O Pages deve usar a origem **GitHub Actions**, pois a publicação direta
-da raiz da branch exibiria o `index.html` legado, sem o login novo.
-
-No build de publicação, `GITHUB_PAGES=true` ativa a exportação estática em `out/`,
-o prefixo `/LupoCalibra` e as páginas com barra final. O desenvolvimento local
-continua usando os caminhos originais, sem esse prefixo.
-
-As variáveis Firebase abaixo devem existir em **Settings → Secrets and variables →
-Actions → Variables** do repositório. Somente a configuração pública do SDK Web
-é usada; `.env.local` não é enviado. Para acessar o painel publicado, é necessária
-uma conta com perfil ativo. A publicação não cria contas nem libera acesso anônimo.
-
-## Variáveis públicas
-
-| Variável | Uso |
+| Variável pública do SDK Web | Necessidade |
 | --- | --- |
-| `NEXT_PUBLIC_FIREBASE_API_KEY` | Obrigatória: configuração do SDK Web/Auth |
-| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Obrigatória: domínio da configuração Web |
-| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | Obrigatória: projeto do Firestore |
-| `NEXT_PUBLIC_FIREBASE_APP_ID` | Obrigatória: identidade do aplicativo Web |
-| `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | Opcional: Storage não é utilizado |
-| `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | Opcional: Messaging não é utilizado |
+| `NEXT_PUBLIC_FIREBASE_API_KEY` | Obrigatória |
+| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Obrigatória |
+| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | Obrigatória |
+| `NEXT_PUBLIC_FIREBASE_APP_ID` | Obrigatória |
+| `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | Opcional |
+| `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | Opcional |
 
-Use os valores do aplicativo Web existente no Console, sem colá-los em arquivos
-versionados. Analytics não é utilizado, portanto não há variável de measurement ID.
-A API key do SDK Web é configuração pública, não uma chave administrativa. Nunca
-coloque private key, service account, senha ou token administrativo em `NEXT_PUBLIC_*`.
-Este projeto não precisa de credenciais Firebase Admin no servidor.
-
-Para o deploy futuro, selecione o framework **Next.js**, Node **22.x**, instalação
-`yarn install --frozen-lockfile` e build `yarn build`. Cadastre as quatro variáveis
-obrigatórias em **Vercel → Project Settings → Environment Variables**, nos ambientes
-que serão utilizados. As duas opcionais podem ser cadastradas se necessário.
-As variáveis `NEXT_PUBLIC_*` entram no bundle durante o build; alterações exigem
-novo build. O prebuild valida os nomes obrigatórios sem imprimir valores.
-
-Antes de usar o domínio definitivo, revise os domínios autorizados em Firebase
-Authentication. Para previews/homologação, prefira um projeto Firebase separado:
-um ADMIN autorizado em preview também poderia gravar na base configurada.
-Nenhum CLI Vercel, login, vínculo de repositório ou deploy foi executado.
-
-Referências: [variáveis Next.js](https://nextjs.org/docs/app/guides/environment-variables)
-e [Next.js na Vercel](https://vercel.com/docs/frameworks/full-stack/nextjs).
-
-## Operação e dados preservados
-
-As 16 BLs, lados e faixas originais estão centralizados em `lib/bins.ts`. Os caminhos
-`configuracoes_cubas/{id}`, `producao_diaria/linha_export`, `historico_paradas/{id}` e
-`estado_sistema/geral` foram preservados; `acessos/{uid}` é a nova fonte de autorização.
-Gravações usam merge, e as regras impedem a alteração de campos legados desconhecidos.
-
-O ADMIN mantém a simulação: intervalo de 342 ms, peças de 150 a 400 g e chance de
-desvio para uma cuba fora da faixa de 2%. A quinta peça fora do peso na mesma cuba,
-nos últimos 120 segundos (limite inclusivo), bloqueia a linha e identifica BL/lado.
-Falhas antigas expiram e peças corretas não apagam falhas recentes. O travamento
-aleatório foi removido. Reset preserva contagens de peças na faixa, limpa a janela de
-falhas e aguarda confirmação da transação Firestore. O estado salvo só é exibido
-após confirmação do servidor, sem antecipar gravações locais pendentes.
-No reset do ADMIN, a duração da parada local é atualizada sem reescrever motivo/tipo/horário.
-O reset do OPERADOR não altera o histórico de paradas; registra o último executor e
-horário em `estado_sistema/geral`. Veja [RESET-OPERADOR.md](docs/RESET-OPERADOR.md).
-A navegação mantém o estado; recarregar a página ou trocar sessão reinicia contagens locais.
-
-O OPERADOR não simula nem grava automaticamente. Visualiza as faixas das 16 BLs e
-consulta o último `statusGeral` salvo. Contagens/pesos individuais aparecem como `---`,
-pois não são persistidos pelo esquema atual. Isso evita exibir zeros locais como dados reais.
-A sincronização desses contadores e a eleição de um único simulador são pendências.
-Um ADMIN aberto observa novos identificadores de reset do servidor e limpa seu estado
-local. Paradas pendentes de uma geração anterior de reset não sobrescrevem a nova geração.
-
-Regulagens válidas aplicam peso alvo ± tolerância à visualização e à classificação.
-Tolerância zero é aceita. Sem documento, usam-se as faixas originais. Em sobreposições,
-vence a última BL correspondente do lado, como antes; lacunas deixam a peça sem classificação.
-Os IDs legados `1_L` a `8_L`/`1_R` a `8_R` permanecem legíveis, mas não são remapeados
-ou gravados automaticamente. Confirme sua correspondência antes de migrar dados.
-
-`index.html`, `regulagem.html`, `script.js` e `regulagem.js` continuam como referências legadas.
-O Next reutiliza o CSS, mas não carrega os scripts legados, que permanecem referências
-históricas com os bugs antigos e não fazem parte do lint da aplicação nova.
+O build conjunto exige as quatro variáveis obrigatórias para incluir o modo autenticado. A execução da demonstração no navegador funciona sem o Firebase. Use apenas os valores públicos da configuração do SDK Web em `NEXT_PUBLIC_*`. Mantenha credenciais administrativas fora do repositório e dessas variáveis.
 
 ## Verificações
 
 ```powershell
-yarn lint
-yarn typecheck
 yarn test
-yarn test:auth:emulator
 yarn test:rules:emulator
-yarn audit:secrets
+yarn test:auth:emulator
+yarn typecheck
+yarn lint
+$env:GITHUB_PAGES = 'true'
 yarn build
 ```
 
-`yarn test` preserva os nove testes operacionais e adiciona testes de sessão/permissões.
-O login por matrícula acrescenta validação de formato e preservação de zeros iniciais:
-19 testes locais passaram, além de lint, TypeScript e build. `test:auth:emulator`
-verifica a autenticação por matrícula no emulador Auth local, sem depender de Java.
-`test:rules:emulator` exige Java 21 no PATH, inicia somente Firestore local no projeto
-fictício `demo-lupocalibra-tests`, testa chamadas diretas às regras e encerra o emulador.
-Nenhum dos testes escreve no projeto real nem exige login de conta real.
+Na validação pré-publicação, passaram **40 testes locais**, **11 testes das regras do Firestore** e **1 teste de login por matrícula**. TypeScript, ESLint e o build estático de produção também passaram. Os testes das regras exigem Java 21 no PATH. Os emuladores usam o projeto fictício `demo-lupocalibra-tests`.
 
-Verificação desta etapa: lint, TypeScript, 17 testes locais (incluindo os nove
-originais), seis testes de regras no emulador e build de produção passaram. As
-quatro variáveis obrigatórias foram confirmadas no bundle cliente sem exibir valores.
-As rotas `/login`, `/` e `/regulagem` responderam HTTP 200; sem sessão, as páginas
-protegidas renderizam somente a verificação de sessão, sem cartões operacionais.
-As 16 BLs foram verificadas no catálogo e nos testes de escrita autorizada do emulador.
-O navegador automatizado não estava disponível para conferir a interface visual.
+## Publicação no GitHub Pages
 
-A [auditoria de segredos](docs/SECURITY-AUDIT.md) cobre arquivos locais e histórico
-alcançável, sem imprimir valores. Não encontrou segredos privados pelos padrões utilizados.
-Somente a configuração pública Firebase aparece nos legados/histórico e no ambiente ignorado.
+O [workflow](.github/workflows/pages.yml) exporta o site para `out/` com o prefixo `/LupoCalibra`. No GitHub, a origem do Pages deve ser **GitHub Actions**. Configure as quatro variáveis obrigatórias do SDK Web em **Settings → Secrets and variables → Actions → Variables** e confira se elas apontam para o Firebase que será usado pelo modo autenticado.
 
-Pendências: publicação das regras atualizadas de reset e homologação da operação real,
-revisão visual no navegador e confirmação dos IDs legados. A aplicação continua sendo
-uma simulação, sem integração com balanças/PLC.
+O workflow pode publicar a cada push na `main`. Antes de liberar a nova versão, compare as regras ativas com `firestore.rules` e guarde a versão ativa para reversão. Se a comparação indicar que é preciso atualizá-las, aguarde a propagação das regras compatíveis antes de liberar o site. Para reverter, recupere uma combinação compatível de site e regras. A publicação das regras é uma operação separada do GitHub Pages.

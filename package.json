@@ -14,7 +14,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "next typegen && tsc --noEmit",
-    "test": "node --experimental-strip-types --test tests/system.test.ts tests/auth.test.ts",
+    "test": "node --experimental-strip-types --test tests/system.test.ts tests/auth.test.ts tests/demo.test.ts tests/production.test.ts",
     "test:auth:emulator": "firebase emulators:exec --only auth --project demo-lupocalibra-tests \"node --experimental-strip-types --test --experimental-test-isolation=none tests/login.emulator.test.mjs\"",
     "test:rules": "node --test tests/firestore.rules.test.mjs",
     "test:rules:emulator": "firebase emulators:exec --only firestore --project demo-lupocalibra-tests \"yarn test:rules\"",

@@ -2,7 +2,6 @@ import { BINS, weightRange, type BinId, type Configs } from './bins.ts';
 
 export const MAX_ALLOWED_ERRORS = 5;
 export const ERROR_WINDOW_MS = 2 * 60 * 1000;
-export const SIMULATION_INTERVAL_MS = 342;
 export type Phase = 'running' | 'jammed' | 'interlocked';
 export type BinState = { totalProcessed: number; lastWeight: number; errors: number; errorTimestamps: number[] };
 export type Stop = { id: string; type: 'JAM' | 'INTERLOCK'; reason: string; startedAt: number };
@@ -36,20 +35,22 @@ export function simulate(state: SystemState, configs: Configs, sample: Sample): 
   let current = state;
   for (const bin of BINS) {
     const previous = current.bins[bin.id];
+    if (!previous.errorTimestamps.length) continue;
     const errorTimestamps = previous.errorTimestamps.filter(time => sample.now - time <= ERROR_WINDOW_MS);
     if (errorTimestamps.length !== previous.errorTimestamps.length) {
       current = { ...current, bins: { ...current.bins, [bin.id]: { ...previous, errorTimestamps, errors: errorTimestamps.length } } };
     }
   }
-  const matches = BINS.filter(bin => {
-    const range = weightRange(bin, configs[bin.id]);
-    return bin.side === sample.side && sample.weight >= range.min && sample.weight <= range.max;
-  });
-  const target = sample.binId
-    ? BINS.find(bin => bin.id === sample.binId && bin.side === sample.side)
-    : sample.failure
+  let target = sample.binId ? BINS.find(bin => bin.id === sample.binId && bin.side === sample.side) : undefined;
+  if (!sample.binId) {
+    const matches = BINS.filter(bin => {
+      const range = weightRange(bin, configs[bin.id]);
+      return bin.side === sample.side && sample.weight >= range.min && sample.weight <= range.max;
+    });
+    target = sample.failure
       ? BINS.find(bin => bin.side === sample.side && !matches.includes(bin))
       : matches.at(-1);
+  }
   if (!target) return current;
   const range = weightRange(target, configs[target.id]);
   const outsideRange = sample.weight < range.min || sample.weight > range.max;

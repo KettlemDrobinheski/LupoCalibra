@@ -46,6 +46,7 @@ service cloud.firestore {
         && production.statusGeral == 'OPERACIONAL'
         && production.motivoParada == ''
         && production.systemInterlockActive == false && production.machineJamActive == false
+        && production.get('lease', null) == null && production.get('stopId', null) == null
         && reset.alertaAtivo == false && reset.tempoEsteiraTravada == 0
         && reset.resetEm == request.time && reset.resetPor == request.auth.uid
         && reset.resetToken is string && reset.resetToken.size() == 36
@@ -59,6 +60,37 @@ service cloud.firestore {
       return data.horario is timestamp && data.tipo in ['JAM', 'INTERLOCK']
         && data.motivo is string && data.motivo.size() > 0 && data.motivo.size() <= 500
         && data.duracao_segundos is int && data.duracao_segundos >= 0;
+    }
+    function productionPath() {
+      return /databases/$(database)/documents/producao_diaria/linha_export;
+    }
+    function liveLease(lease) {
+      return lease is map && lease.get('renewedAt', null) is timestamp
+        && request.time < lease.renewedAt + duration.value(30, 's');
+    }
+    function leaseChange() {
+      let before = resource.data.get('lease', null);
+      let after = request.resource.data.get('lease', null);
+      return resource.data.get('statusGeral', '') == 'OPERACIONAL'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lease'])
+        && ((after == null && before is map && before.uid == request.auth.uid)
+          || (after is map && after.keys().hasOnly(['id', 'uid', 'renewedAt'])
+            && after.uid == request.auth.uid && after.id is string && after.id.size() == 36
+            && after.renewedAt == request.time
+            && ((liveLease(before) && before.uid == after.uid && before.id == after.id)
+              || (!liveLease(before) && (before == null || before.get('id', '') != after.id)))));
+    }
+    function registerStop() {
+      let lease = resource.data.get('lease', null);
+      let event = request.resource.data.stopId;
+      let path = /databases/$(database)/documents/historico_paradas/$(event);
+      return resource.data.statusGeral == 'OPERACIONAL' && liveLease(lease) && lease.uid == request.auth.uid
+        && request.resource.data.lease == null && event is string && event.size() == 36
+        && request.resource.data.statusGeral in ['BLOQUEADO', 'JAMMED']
+        && !exists(path) && existsAfter(path)
+        && getAfter(path).data.leaseId == lease.id
+        && getAfter(path).data.motivo == request.resource.data.motivoParada
+        && getAfter(path).data.tipo == (request.resource.data.statusGeral == 'BLOQUEADO' ? 'INTERLOCK' : 'JAM');
     }
 
     match /acessos/{uid} {
@@ -77,10 +109,12 @@ service cloud.firestore {
 
     match /producao_diaria/linha_export {
       allow get: if authorized();
-      allow create: if operator() && (operatorReset() || request.resource.data.statusGeral != 'OPERACIONAL') && validProduction()
-        && request.resource.data.keys().hasOnly(['ultimo_registro', 'systemInterlockActive', 'machineJamActive', 'statusGeral', 'resetToken', 'motivoParada']);
-      allow update: if operator() && (operatorReset() || (request.resource.data.statusGeral != 'OPERACIONAL' && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['resetToken']))) && validProduction()
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ultimo_registro', 'systemInterlockActive', 'machineJamActive', 'statusGeral', 'resetToken', 'motivoParada']);
+      allow create: if operatorReset() && validProduction()
+        && request.resource.data.keys().hasOnly(['ultimo_registro', 'systemInterlockActive', 'machineJamActive', 'statusGeral', 'resetToken', 'motivoParada', 'lease', 'stopId']);
+      allow update: if operator() && (leaseChange() || (
+        validProduction()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ultimo_registro', 'systemInterlockActive', 'machineJamActive', 'statusGeral', 'resetToken', 'motivoParada', 'lease', 'stopId'])
+        && (operatorReset() || (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['resetToken']) && registerStop()))));
       allow delete: if false;
     }
 
@@ -96,8 +130,13 @@ service cloud.firestore {
     match /historico_paradas/{id} {
       allow get, list: if operator();
       allow create: if operator() && validStop()
-        && request.resource.data.keys().hasOnly(['horario', 'tipo', 'motivo', 'duracao_segundos']);
-      allow update: if operator() && validStop()
+        && get(productionPath()).data.statusGeral == 'OPERACIONAL'
+        && getAfter(productionPath()).data.get('stopId', '') == id
+        && getAfter(productionPath()).data.statusGeral in ['BLOQUEADO', 'JAMMED']
+        && getAfter(productionPath()).data.ultimo_registro == request.time
+        && request.resource.data.keys().hasOnly(['horario', 'tipo', 'motivo', 'duracao_segundos', 'leaseId']);
+      allow update: if operatorReset() && validStop()
+        && get(productionPath()).data.get('stopId', '') == id
         && request.resource.data.duracao_segundos >= resource.data.duracao_segundos
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['duracao_segundos']);
       allow delete: if false;

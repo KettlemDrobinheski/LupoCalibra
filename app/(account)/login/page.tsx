@@ -2,10 +2,11 @@
 
 import { useEffect, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../../components/auth-provider';
-import { SessionActions } from '../../components/session-actions';
-import { authenticationMessage, canRead } from '../../lib/access';
-import { MAX_REGISTRATION_LENGTH } from '../../lib/registration';
+import Link from 'next/link';
+import { useAuth } from '../../../components/auth-provider';
+import { SessionActions } from '../../../components/session-actions';
+import { authenticationMessage, canRead } from '../../../lib/access';
+import { MAX_REGISTRATION_LENGTH } from '../../../lib/registration';
 
 export default function LoginPage() {
   const { session, login, retry } = useAuth();
@@ -40,5 +41,6 @@ export default function LoginPage() {
       <SessionActions />
     </> : <p role="status">{session.status === 'authorizing' ? 'Verificando autorização…' : 'Verificando sessão…'}</p>}
     {error && <p className="notice-error" role="alert">{error}</p>}
+    <Link className="btn-voltar btn-bloco demo-entry" href="/demo">Explorar demonstração</Link>
   </section></main>;
 }

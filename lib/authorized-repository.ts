@@ -12,6 +12,9 @@ export function authorizedRepository(repo: Repository, session: () => Session): 
     watchConfigs(receive, fail) { check(); return repo.watchConfigs(receive, fail); },
     watchProduction(receive, fail) { check(); return repo.watchProduction?.(receive, fail) ?? (() => {}); },
     async saveConfig(id, config) { check(true); await repo.saveConfig(id, config); },
-    async persist(state, reset, expectedResetToken) { check(true); await repo.persist(state, reset, expectedResetToken); },
+    async persist(state, reset, expectedResetToken, condition) { check(true); await repo.persist(state, reset, expectedResetToken, condition); },
+    ...(repo.changeLease && {
+      async changeLease(action, id, revision) { check(true); await repo.changeLease!(action, id, revision); },
+    }),
   };
 }

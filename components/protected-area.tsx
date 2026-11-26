@@ -1,11 +1,24 @@
 'use client';
 
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { canRead } from '../lib/access';
+import { canRead, canOperate, canReset } from '../lib/access';
+import { repository } from '../lib/repository';
+import { authorizedRepository } from '../lib/authorized-repository';
+import { SystemStore } from '../lib/store';
+import { AUTHENTICATED_DEVIATION_CHANCE } from '../lib/production';
 import { useAuth } from './auth-provider';
 import { SystemProvider } from './system-provider';
 import { SessionActions } from './session-actions';
+
+function OperationalSystem({ children }: { children: ReactNode }) {
+  const { getSession } = useAuth();
+  const [store] = useState(() => new SystemStore(
+    authorizedRepository(repository, getSession), () => canOperate(getSession()), () => canReset(getSession()),
+    AUTHENTICATED_DEVIATION_CHANCE,
+  ));
+  return <SystemProvider store={store}>{children}</SystemProvider>;
+}
 
 export function ProtectedArea({ children }: { children: ReactNode }) {
   const { session, retry } = useAuth();
@@ -19,5 +32,5 @@ export function ProtectedArea({ children }: { children: ReactNode }) {
       <SessionActions />
     </> : <p role="status">{session.status === 'authorizing' ? 'Verificando autorização…' : 'Verificando sessão…'}</p>}
   </section></main>;
-  return <SystemProvider key={`${session.user!.uid}:${session.role}`}>{children}</SystemProvider>;
+  return <OperationalSystem key={`${session.user!.uid}:${session.role}`}>{children}</OperationalSystem>;
 }

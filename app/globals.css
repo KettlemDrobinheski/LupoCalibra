@@ -39,3 +39,15 @@ header .ihm-container { width: 100%; margin-bottom: 0; }
 button:disabled, fieldset:disabled { cursor: not-allowed; }
 
 .status-ready { background: #f1c40f; color: #202024; }
+.status-running { background: #006648; }
+.status-stopped { background: #992a3d; animation: none; }
+.status-jammed { background: #973d24; animation: none; }
+.btn-reset, .ihm-botao { background-color: #006648; }
+.btn-reset:hover, .ihm-botao:hover { background-color: #00533a; }
+.demo-entry { margin-top: 20px; }
+.demo-label { color: #ffd18b; font-weight: 700; }
+.btn-regular-cuba { min-width: 44px; min-height: 44px; display: inline-grid; place-items: center; }
+@media (max-width: 480px) {
+  .grid-container { grid-template-columns: minmax(0, 1fr); }
+  .ihm-header-alinhado > div { flex-basis: 100%; min-width: 0; }
+}
